@@ -1,0 +1,18 @@
+{
+  "name": "עיניים טובות — קהילת הדר",
+  "short_name": "עיניים טובות",
+  "description": "אפליקציית מתנדבים לתוכנית סיורי עיניים טובות בשכונת הדר, חיפה",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eaf6ef",
+  "theme_color": "#eaf6ef",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

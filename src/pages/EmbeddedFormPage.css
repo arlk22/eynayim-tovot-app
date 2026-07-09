@@ -1,0 +1,25 @@
+.embedded-form-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.embedded-form-page__title {
+  font-size: 17px;
+  text-align: center;
+  margin-bottom: var(--space-3);
+}
+
+.embedded-form-page__iframe {
+  flex: 1;
+  width: 100%;
+  min-height: 70vh;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}

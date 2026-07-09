@@ -1,0 +1,217 @@
+.patrol-page {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-7);
+}
+
+.patrol-page__month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.patrol-page__month-nav button {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.patrol-page__title {
+  font-size: 18px;
+  text-align: center;
+}
+
+.patrol-page__hint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.patrol-page__error {
+  color: var(--color-danger);
+  text-align: center;
+  margin-bottom: var(--space-3);
+}
+
+.patrol-page__loading {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.patrol-page__calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: var(--space-4);
+}
+
+.patrol-page__weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-faint);
+  padding-bottom: 4px;
+}
+
+.patrol-page__day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.patrol-page__day:disabled {
+  background: transparent;
+  color: var(--color-text-faint);
+  cursor: default;
+}
+
+.patrol-page__day--empty {
+  background: transparent;
+  cursor: default;
+}
+
+.patrol-page__day--open {
+  background: var(--color-accent-rose);
+  color: var(--color-accent-rose-dark);
+  font-weight: 700;
+}
+
+.patrol-page__day--selected {
+  outline: 2px solid var(--color-primary-dark);
+  outline-offset: 2px;
+}
+
+.patrol-page__day-patrols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.patrol-card {
+  background: var(--color-accent-mint);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.patrol-card__header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.patrol-card__route,
+.patrol-card__leader,
+.patrol-card__count,
+.patrol-card__joined {
+  font-size: 13px;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.patrol-card__encourage {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent-mint-dark);
+  margin: 0;
+}
+
+.patrol-card__checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.patrol-card__checkbox input {
+  width: 20px;
+  height: 20px;
+}
+
+.patrol-page__my-patrols h2 {
+  font-size: 16px;
+  margin-bottom: var(--space-2);
+}
+
+.patrol-page__my-empty {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.patrol-page__my-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.patrol-page__my-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.patrol-page__popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 55, 51, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  z-index: 50;
+}
+
+.patrol-page__popup {
+  background: var(--color-accent-yellow);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  max-width: 340px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.patrol-page__popup p {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.patrol-page__popup button {
+  align-self: center;
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-yellow-dark);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}

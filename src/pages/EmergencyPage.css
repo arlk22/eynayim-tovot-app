@@ -1,0 +1,83 @@
+.emergency-page {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4) var(--space-7);
+}
+
+.emergency-page__title {
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: var(--space-5);
+}
+
+.emergency-page__loading,
+.emergency-page__empty {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.emergency-page__error {
+  text-align: center;
+  color: var(--color-danger);
+}
+
+.emergency-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.emergency-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card);
+  text-decoration: none;
+  color: inherit;
+}
+
+.emergency-card:active {
+  transform: scale(0.98);
+}
+
+.emergency-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-rose);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.emergency-card__info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.emergency-card__name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.emergency-card__phone {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  direction: ltr;
+  text-align: right;
+}
+
+.emergency-card__call {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent-rose-dark);
+  white-space: nowrap;
+}
