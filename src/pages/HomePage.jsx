@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { fetchHomeStats } from '../lib/api';
+import { fetchHomeStats, fetchReminders } from '../lib/api';
+import { countUnseen } from '../lib/seenAnnouncements';
 import Card from '../components/Card';
 import './HomePage.css';
 
@@ -25,18 +26,27 @@ function formatPatrolDate(dateStr) {
   return d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'numeric' });
 }
 
+function countLabel(n, singular, plural) {
+  return n === 1 ? singular : `${n} ${plural}`;
+}
+
 export default function HomePage() {
   const { volunteer } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [community, setCommunity] = useState('eynayim');
+  const [unseenCount, setUnseenCount] = useState(0);
+  const [reminders, setReminders] = useState([]);
+  const [showReminders, setShowReminders] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    fetchHomeStats()
+    fetchHomeStats(volunteer?.id)
       .then((data) => {
-        if (!cancelled) setStats(data);
+        if (cancelled) return;
+        setStats(data);
+        setUnseenCount(countUnseen(data.announcements || []));
       })
       .catch(() => {
         if (!cancelled) setStats(null);
@@ -47,9 +57,25 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [volunteer?.id]);
+
+  useEffect(() => {
+    if (!volunteer?.id) return;
+    let cancelled = false;
+    fetchReminders(volunteer.id)
+      .then((data) => {
+        if (!cancelled) setReminders(data.reminders || []);
+      })
+      .catch(() => {
+        if (!cancelled) setReminders([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [volunteer?.id]);
 
   const pinned = stats?.announcements?.find((a) => a.pinned) || stats?.announcements?.[0];
+  const hasNotifications = unseenCount > 0 || reminders.length > 0;
 
   return (
     <div className="home-page">
@@ -73,6 +99,23 @@ export default function HomePage() {
         {greeting()}{volunteer?.name ? `, ${volunteer.name}` : ''}
       </p>
 
+      {hasNotifications && (
+        <p className="home-page__notify">
+          יש לך{' '}
+          {unseenCount > 0 && (
+            <button type="button" className="home-page__notify-link" onClick={() => navigate('/news')}>
+              {countLabel(unseenCount, 'הודעה חדשה אחת', 'הודעות חדשות')}
+            </button>
+          )}
+          {unseenCount > 0 && reminders.length > 0 && ' ו-'}
+          {reminders.length > 0 && (
+            <button type="button" className="home-page__notify-link" onClick={() => setShowReminders(true)}>
+              {countLabel(reminders.length, 'תזכורת אחת', 'תזכורות')}
+            </button>
+          )}
+        </p>
+      )}
+
       <div className="home-page__stats">
         <div className="home-page__stat">
           <span className="home-page__stat-icon">👥</span>
@@ -86,7 +129,9 @@ export default function HomePage() {
             {loading
               ? '…'
               : stats?.nextPatrol
-                ? `הסיור הבא: ${formatPatrolDate(stats.nextPatrol.date)}, ${stats.nextPatrol.startTime || ''}`
+                ? stats.nextPatrol.isMine
+                  ? `הסיור הבא שלך: ${stats.nextPatrol.routeName ? `${stats.nextPatrol.routeName}, ` : ''}${formatPatrolDate(stats.nextPatrol.date)}, ${stats.nextPatrol.startTime || ''}`
+                  : `הסיור הבא: ${formatPatrolDate(stats.nextPatrol.date)}, ${stats.nextPatrol.startTime || ''}`
                 : 'אין סיור קרוב מתוזמן'}
           </span>
         </div>
@@ -142,6 +187,25 @@ export default function HomePage() {
         <button type="button" className="home-page__coordinator-link" onClick={() => navigate('/coordinator')}>
           🔐 אזור הרכז
         </button>
+      )}
+
+      {showReminders && (
+        <div className="home-page__popup-backdrop" onClick={() => setShowReminders(false)}>
+          <div className="home-page__popup" onClick={(e) => e.stopPropagation()}>
+            <h2>התזכורות שלך</h2>
+            <ul className="home-page__reminder-list">
+              {reminders.map((r) => (
+                <li key={r.id}>
+                  מחר{r.routeName ? ` — מסלול ${r.routeName}` : ''}, {r.startTime}
+                  {r.endTime ? `-${r.endTime}` : ''}
+                </li>
+              ))}
+            </ul>
+            <button type="button" onClick={() => setShowReminders(false)}>
+              הבנתי
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

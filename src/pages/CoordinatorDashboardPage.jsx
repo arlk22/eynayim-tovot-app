@@ -17,6 +17,13 @@ function ymKey(year, month) {
   return `${year}-${String(month + 1).padStart(2, '0')}`;
 }
 
+function whatsAppLink(phone) {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (!digits) return null;
+  const intl = digits.startsWith('972') ? digits : `972${digits.replace(/^0/, '')}`;
+  return `https://wa.me/${intl}`;
+}
+
 function ParticipationTab() {
   const { coordinatorSession } = useAuth();
   const today = new Date();
@@ -91,21 +98,41 @@ function ParticipationTab() {
         <div className="coordinator-dash__list">
           {volunteers.map((v) => (
             <div key={v.id} className="participation-row">
-              <div className="participation-row__info">
-                <span className="participation-row__name">{v.name}</span>
-                <span className="participation-row__status">{v.status}</span>
+              <div className="participation-row__top">
+                <div className="participation-row__info">
+                  <span className="participation-row__name">{v.name}</span>
+                  <span className="participation-row__status">{v.status}</span>
+                </div>
+                <span className={`participation-row__count${v.count < 2 ? ' participation-row__count--low' : ''}`}>
+                  {v.count} סיורים
+                </span>
               </div>
-              <span className={`participation-row__count${v.count < 2 ? ' participation-row__count--low' : ''}`}>
-                {v.count} סיורים
-              </span>
-              <button
-                type="button"
-                className="participation-row__reset"
-                onClick={() => handleReset(v)}
-                disabled={pendingId === v.id}
-              >
-                איפוס מכשיר
-              </button>
+              <div className="participation-row__actions">
+                {v.phone && (
+                  <a href={`tel:${v.phone}`} className="participation-row__contact-btn" aria-label={`התקשרות אל ${v.name}`}>
+                    📞 התקשרות
+                  </a>
+                )}
+                {v.phone && whatsAppLink(v.phone) && (
+                  <a
+                    href={whatsAppLink(v.phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="participation-row__contact-btn participation-row__contact-btn--whatsapp"
+                    aria-label={`ווטסאפ אל ${v.name}`}
+                  >
+                    💬 ווטסאפ
+                  </a>
+                )}
+                <button
+                  type="button"
+                  className="participation-row__reset"
+                  onClick={() => handleReset(v)}
+                  disabled={pendingId === v.id}
+                >
+                  איפוס מכשיר
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -116,23 +143,42 @@ function ParticipationTab() {
 
 function EventsTab() {
   const { coordinatorSession } = useAuth();
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pendingId, setPendingId] = useState(null);
 
+  const monthKey = ymKey(year, month);
+
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetchCoordinatorEvents(coordinatorSession.volunteerId, coordinatorSession.password)
+    fetchCoordinatorEvents(coordinatorSession.volunteerId, coordinatorSession.password, monthKey)
       .then((data) => setEvents(data.events))
       .catch(() => setError('לא הצלחנו לטעון את דיווחי האירועים.'))
       .finally(() => setLoading(false));
-  }, [coordinatorSession]);
+  }, [coordinatorSession, monthKey]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  function goToMonth(delta) {
+    let m = month + delta;
+    let y = year;
+    if (m < 0) {
+      m = 11;
+      y -= 1;
+    } else if (m > 11) {
+      m = 0;
+      y += 1;
+    }
+    setMonth(m);
+    setYear(y);
+  }
 
   async function handleResolve(event) {
     setPendingId(event.id);
@@ -148,11 +194,21 @@ function EventsTab() {
 
   return (
     <div>
+      <div className="coordinator-dash__month-nav">
+        <button type="button" onClick={() => goToMonth(-1)} aria-label="חודש קודם">
+          ‹
+        </button>
+        <strong>{MONTH_NAMES[month]}</strong>
+        <button type="button" onClick={() => goToMonth(1)} aria-label="חודש הבא">
+          ›
+        </button>
+      </div>
+
       {loading && <p className="coordinator-dash__loading">טוען…</p>}
       {error && <p className="coordinator-dash__error">{error}</p>}
 
       {!loading && events.length === 0 && (
-        <p className="coordinator-dash__loading">אין דיווחי אירועים.</p>
+        <p className="coordinator-dash__loading">אין דיווחי אירועים בחודש זה.</p>
       )}
 
       {!loading && (

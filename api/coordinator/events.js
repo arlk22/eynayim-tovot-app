@@ -8,16 +8,22 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { volunteerId, password } = req.query || {};
+  const { volunteerId, password, month } = req.query || {};
   const coordinator = await verifyCoordinator(volunteerId, password);
   if (!coordinator) {
     res.status(401).json({ error: 'invalid_credentials' });
     return;
   }
 
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+    res.status(400).json({ error: 'invalid_month' });
+    return;
+  }
+
   try {
     const [events, volunteers, patrols] = await Promise.all([
       listRecords(TABLES.PATROL_EVENTS, {
+        filterByFormula: `DATETIME_FORMAT({${EVENT_FIELDS.TIME}}, 'YYYY-MM')='${month}'`,
         sort: [{ field: EVENT_FIELDS.TIME, direction: 'desc' }],
       }),
       listRecords(TABLES.VOLUNTEERS, { fields: [VOLUNTEER_FIELDS.NAME] }),

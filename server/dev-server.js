@@ -15,6 +15,7 @@ import coordinatorParticipation from '../api/coordinator/participation.js';
 import coordinatorResetDevice from '../api/coordinator/reset-device.js';
 import coordinatorEvents from '../api/coordinator/events.js';
 import coordinatorResolveEvent from '../api/coordinator/resolve-event.js';
+import reminders from '../api/reminders.js';
 
 const app = express();
 app.use(express.json());
@@ -30,6 +31,7 @@ app.all('/api/coordinator/participation', coordinatorParticipation);
 app.all('/api/coordinator/reset-device', coordinatorResetDevice);
 app.all('/api/coordinator/events', coordinatorEvents);
 app.all('/api/coordinator/resolve-event', coordinatorResolveEvent);
+app.all('/api/reminders', reminders);
 
 const PORT = process.env.API_PORT || 5174;
 app.listen(PORT, () => {

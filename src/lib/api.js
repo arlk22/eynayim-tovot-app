@@ -13,8 +13,9 @@ async function request(path, options) {
   return data;
 }
 
-export function fetchHomeStats() {
-  return request('/api/home-stats');
+export function fetchHomeStats(volunteerId) {
+  const params = volunteerId ? `?volunteerId=${encodeURIComponent(volunteerId)}` : '';
+  return request(`/api/home-stats${params}`);
 }
 
 export function login(phone) {
@@ -59,8 +60,8 @@ export function resetVolunteerDevice(volunteerId, password, targetVolunteerId) {
   });
 }
 
-export function fetchCoordinatorEvents(volunteerId, password) {
-  const params = new URLSearchParams({ volunteerId, password });
+export function fetchCoordinatorEvents(volunteerId, password, month) {
+  const params = new URLSearchParams({ volunteerId, password, month });
   return request(`/api/coordinator/events?${params}`);
 }
 
@@ -69,4 +70,8 @@ export function resolveEvent(volunteerId, password, eventId) {
     method: 'POST',
     body: JSON.stringify({ volunteerId, password, eventId }),
   });
+}
+
+export function fetchReminders(volunteerId) {
+  return request(`/api/reminders?volunteerId=${encodeURIComponent(volunteerId)}`);
 }

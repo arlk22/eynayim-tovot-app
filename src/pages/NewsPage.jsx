@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchAnnouncements } from '../lib/api';
+import { markAllSeen } from '../lib/seenAnnouncements';
 import './NewsPage.css';
 
 const SECTIONS = [
@@ -17,7 +18,10 @@ export default function NewsPage() {
     let cancelled = false;
     fetchAnnouncements()
       .then((data) => {
-        if (!cancelled) setAnnouncements(data.announcements);
+        if (!cancelled) {
+          setAnnouncements(data.announcements);
+          markAllSeen(data.announcements);
+        }
       })
       .catch(() => {
         if (!cancelled) setError('לא הצלחנו לטעון את ההודעות. נסו לרענן את העמוד.');

@@ -70,12 +70,48 @@
 
 .participation-row {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-2);
   background: var(--color-surface);
   border-radius: var(--radius-md);
   padding: var(--space-3);
   box-shadow: var(--shadow-card);
+}
+
+.participation-row__top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.participation-row__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.participation-row__contact-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.participation-row__contact-btn--whatsapp {
+  background: rgba(37, 211, 102, 0.15);
+  color: #128c4a;
+}
+
+.participation-row__reset {
+  margin-inline-start: auto;
 }
 
 .participation-row__info {

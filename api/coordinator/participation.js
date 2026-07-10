@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   try {
     const [volunteers, patrols, registrations] = await Promise.all([
       listRecords(TABLES.VOLUNTEERS, {
-        fields: [VOLUNTEER_FIELDS.NAME, VOLUNTEER_FIELDS.STATUS],
+        fields: [VOLUNTEER_FIELDS.NAME, VOLUNTEER_FIELDS.STATUS, VOLUNTEER_FIELDS.PHONE],
       }),
       listRecords(TABLES.PATROLS, {
         filterByFormula: `DATETIME_FORMAT({${PATROL_FIELDS.DATE}}, 'YYYY-MM')='${month}'`,
@@ -55,6 +55,7 @@ export default async function handler(req, res) {
         id: v.id,
         name: v.fields[VOLUNTEER_FIELDS.NAME] || '',
         status: v.fields[VOLUNTEER_FIELDS.STATUS] || '',
+        phone: v.fields[VOLUNTEER_FIELDS.PHONE] || '',
         count: countByVolunteer.get(v.id) || 0,
       }))
       .sort((a, b) => a.count - b.count || a.name.localeCompare(b.name, 'he'));

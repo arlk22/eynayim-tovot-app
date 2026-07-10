@@ -7,6 +7,8 @@ import {
   PATROL_STATUS,
   ROUTE_FIELDS,
   ANNOUNCEMENT_FIELDS,
+  REGISTRATION_FIELDS,
+  REGISTRATION_STATUS,
 } from './_lib/fields.js';
 
 export default async function handler(req, res) {
@@ -14,6 +16,8 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
+
+  const { volunteerId } = req.query || {};
 
   try {
     const [volunteers, patrols, announcements] = await Promise.all([
@@ -45,11 +49,28 @@ export default async function handler(req, res) {
         const route = await getRecord(TABLES.PATROL_ROUTES, routeId);
         routeName = route.fields[ROUTE_FIELDS.NAME] || null;
       }
+      let isMine = false;
+      if (volunteerId) {
+        // Linked-record IDs can't be matched via FIND/ARRAYJOIN in a formula
+        // (it resolves to the linked record's primary-field text, not its
+        // ID) — filter on status only, match IDs in JS.
+        const registered = await listRecords(TABLES.REGISTRATIONS, {
+          filterByFormula: `{${REGISTRATION_FIELDS.STATUS}}='${REGISTRATION_STATUS.REGISTERED}'`,
+          fields: [REGISTRATION_FIELDS.VOLUNTEER, REGISTRATION_FIELDS.PATROLS],
+        });
+        isMine = registered.some(
+          (r) =>
+            (r.fields[REGISTRATION_FIELDS.VOLUNTEER] || []).includes(volunteerId) &&
+            (r.fields[REGISTRATION_FIELDS.PATROLS] || []).includes(patrols[0].id)
+        );
+      }
+
       nextPatrol = {
         date: p[PATROL_FIELDS.DATE] || null,
         startTime: p[PATROL_FIELDS.START_TIME] || null,
         endTime: p[PATROL_FIELDS.END_TIME] || null,
         routeName,
+        isMine,
       };
     }
 
