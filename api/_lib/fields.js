@@ -9,6 +9,11 @@ export const TABLES = {
   ANNOUNCEMENTS: 'Announcements',
   EMERGENCY_CONTACTS: 'Emergency Contacts',
   PATROL_EVENTS: 'Patrol Events',
+  HADAR_NEW_REPORT: 'Hadar_New_Report',
+  STREETS: 'Streets',
+  ACTIVITY_LOG: 'Activity_Log',
+  REPORT_CATEGORIES: 'Report Categories',
+  REPORT_SUBCATEGORIES: 'Report Subcategories',
 };
 
 export const VOLUNTEER_FIELDS = {
@@ -19,6 +24,7 @@ export const VOLUNTEER_FIELDS = {
   STATUS: 'סטטוס',
   ROLE: 'תפקיד',
   COORDINATOR_PASSWORD: 'סיסמת רכז',
+  MOKAD_PASSWORD: 'סיסמת מוקד',
   REGISTRATIONS: 'Registrations',
 };
 
@@ -31,9 +37,11 @@ export const VOLUNTEER_ROLE = {
   AREA_COORDINATOR: 'רכז אזור',
   PATROL_LEADER: 'מוביל סיור',
   VOLUNTEER: 'מתנדב',
+  MOKADAN: 'מוקדן',
 };
 
 export const COORDINATOR_ROLES = [VOLUNTEER_ROLE.MANAGER, VOLUNTEER_ROLE.AREA_COORDINATOR];
+export const MOKAD_ROLES = [VOLUNTEER_ROLE.MOKADAN, VOLUNTEER_ROLE.MANAGER];
 
 export const PATROL_FIELDS = {
   ID: 'Patrol ID',
@@ -48,6 +56,8 @@ export const PATROL_FIELDS = {
   SPOTS_LEFT: 'מקומות פנויים',
   STATUS: 'סטטוס סיור',
   REGISTRATIONS_LINK: 'נרשמים',
+  NOTES: 'הערות',
+  VERIFICATION_TASKS: 'Hadar_New_Report',
 };
 
 export const PATROL_STATUS = {
@@ -61,6 +71,14 @@ export const PATROL_STATUS = {
 export const ROUTE_FIELDS = {
   ID: 'Route ID',
   NAME: 'שם המסלול',
+  AREA: 'אזור',
+  DURATION: 'משך',
+  MEETING_POINT: 'נקודת מפגש',
+  DESCRIPTION: 'תיאור מסלול הסיור',
+  MAP: 'מפה',
+  ACTIVE: 'פעיל',
+  SPECIAL_INSTRUCTIONS: 'הנחיות מיוחדות',
+  PATROLS: 'Patrols',
 };
 
 export const REGISTRATION_FIELDS = {
@@ -118,4 +136,86 @@ export const EVENT_FIELDS = {
 export const EVENT_STATUS = {
   RESOLVED: 'הסתיים',
   NEEDS_FOLLOWUP: 'דורש טיפול נוסף',
+};
+
+export const STREET_FIELDS = {
+  NAME: 'שם רחוב',
+};
+
+export const REPORT_CATEGORY_FIELDS = {
+  NAME: 'שם קטגוריה',
+};
+
+export const REPORT_SUBCATEGORY_FIELDS = {
+  NAME: 'שם תת קטגוריה',
+};
+
+export const HADAR_REPORT_FIELDS = {
+  ID: 'מזהה',
+  REPORT_TYPE: 'סוג דיווח',
+  CATEGORY: 'קטגוריה',
+  SUBCATEGORY: 'תת קטגוריה',
+  DESCRIPTION: 'תיאור',
+  STREET: 'רחוב',
+  SUBCATEGORY_DISPLAY: 'תת קטגוריה לתצוגה',
+  HOUSE_NUMBER: 'מס בית',
+  MAIN_PHOTO: 'תמונה ראשית',
+  REPORTER: 'שם מדווח', // link to Volunteers — only for reports actually filed by a registered volunteer
+  REPORTER_NAME_TEXT: 'שם פונה', // free-text name, for residents / unmatched reporters
+  PHONE: 'מספר טלפון',
+  EMAIL: 'אימייל',
+  REPORTED_AT: 'תאריך דיווח',
+  STATUS: 'סטטוס',
+  LAST_VERIFIED_AT: 'תאריך אימות אחרון',
+  URGENCY: 'דחיפות',
+  REQUIRES_VISIT: 'דורש ביקור',
+  VISIT_DATE: 'תאריך ביקור',
+  HANDLED_BY: 'טופל ע"י',
+  TREATMENT_LOG: 'לוג טיפול',
+  SOURCE: 'מקור הדיווח',
+  MAP_ADDRESS: 'כתובת למפה',
+  DISPLAYED_ADDRESS: 'כתובת מוצגת',
+  DAYS_SINCE_REPORT: 'ימים מאז דיווח',
+  VERIFYING_PATROL: 'סיור מאמת',
+  ACTIVITY_LOG: 'Activity_Log',
+};
+
+export const HADAR_REPORT_TYPE = {
+  ANONYMOUS: 'אנונימי',
+  IDENTIFIED: 'מזוהה',
+};
+
+export const HADAR_REPORT_STATUS = {
+  NEW: 'חדש',
+  VERIFIED: 'אומת',
+  IN_TREATMENT: 'בטיפול',
+  CLOSED: 'נסגר',
+};
+
+export const HADAR_REPORT_URGENCY = {
+  LOW: 'נמוכה',
+  MEDIUM: 'בינונית',
+  HIGH: 'גבוהה',
+};
+
+export const ACTIVITY_LOG_FIELDS = {
+  REPORT_NUMBER: 'מספר דיווח',
+  DATETIME: 'תאריך ושעה',
+  RELATED_REPORT: 'קשור למפגע',
+  ACTION_TYPE: 'סוג פעולה',
+  CONTENT: 'תוכן דיווח',
+  VOLUNTEER: 'שם מתנדב',
+  FORWARDED_TO: 'הועבר לטיפול',
+  TRACKING_PHOTO: 'תמונת מעקב',
+};
+
+export const ACTIVITY_LOG_ACTION_TYPE = {
+  FIELD_VERIFICATION: 'אימות שטח',
+  MUNICIPALITY_CONTACT: 'פניה לעירייה',
+  RESIDENT_UPDATE: 'עדכון ע"י תושב',
+  REPEAT_VISIT: 'ביקור חוזר',
+  STATUS_CHANGE: 'שינוי סטטוס',
+  HISTORICAL_INFO: 'מידע הסטורי',
+  SOLUTION_IDEA: 'רעיון לפתרון',
+  PHOTO_DOCUMENTATION: 'תיעוד מצולם',
 };

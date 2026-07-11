@@ -1,0 +1,156 @@
+.community-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-7);
+  text-align: center;
+}
+
+.community-page__icon {
+  font-size: 44px;
+}
+
+.community-page__title {
+  font-size: 20px;
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.community-page__intro {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin-bottom: var(--space-5);
+}
+
+.community-page__loading,
+.community-page__error {
+  color: var(--color-text-muted);
+}
+
+.community-page__headline {
+  display: flex;
+  gap: var(--space-4);
+  width: 100%;
+  margin-bottom: var(--space-5);
+}
+
+.community-page__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-3);
+  box-shadow: var(--shadow-card);
+}
+
+.community-page__stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.community-page__stat-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.community-page__section {
+  width: 100%;
+  text-align: start;
+  margin-bottom: var(--space-5);
+}
+
+.community-page__section h2 {
+  font-size: 15px;
+  margin-bottom: var(--space-3);
+  text-align: center;
+}
+
+.community-page__bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.community-page__bar-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 28px;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.community-page__bar-label {
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-page__bar-track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  overflow: hidden;
+}
+
+.community-page__bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+}
+
+.community-page__bar-fill[data-status="חדש"] {
+  background: #d05a3c;
+}
+
+.community-page__bar-fill[data-status="אומת"] {
+  background: #3a5db0;
+}
+
+.community-page__bar-fill[data-status="בטיפול"] {
+  background: #c99618;
+}
+
+.community-page__bar-fill[data-status="נסגר"] {
+  background: #2c8558;
+}
+
+.community-page__bar-fill--category {
+  background: var(--color-accent, var(--color-primary));
+}
+
+.community-page__bar-count {
+  text-align: end;
+  color: var(--color-text-faint);
+  font-weight: 700;
+}
+
+.community-page__cta {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.community-page__cta-btn {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.community-page__cta-btn--secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-card);
+}

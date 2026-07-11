@@ -1,14 +1,16 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { login as loginRequest, coordinatorAuth } from '../lib/api';
+import { login as loginRequest, coordinatorAuth, mokadAuth } from '../lib/api';
 
 const STORAGE_KEY = 'eynayim-tovot.volunteer';
 const COORDINATOR_KEY = 'eynayim-tovot.coordinator';
+const MOKAD_KEY = 'eynayim-tovot.mokad';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [volunteer, setVolunteer] = useState(null);
   const [coordinatorSession, setCoordinatorSession] = useState(null);
+  const [mokadSession, setMokadSession] = useState(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -17,6 +19,8 @@ export function AuthProvider({ children }) {
       if (raw) setVolunteer(JSON.parse(raw));
       const rawCoordinator = localStorage.getItem(COORDINATOR_KEY);
       if (rawCoordinator) setCoordinatorSession(JSON.parse(rawCoordinator));
+      const rawMokad = localStorage.getItem(MOKAD_KEY);
+      if (rawMokad) setMokadSession(JSON.parse(rawMokad));
     } catch {
       // ignore corrupt storage
     }
@@ -47,9 +51,36 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(COORDINATOR_KEY);
   }, []);
 
+  const unlockMokad = useCallback(
+    async (password) => {
+      if (!volunteer) throw new Error('not_logged_in');
+      await mokadAuth(volunteer.id, password);
+      const session = { volunteerId: volunteer.id, password };
+      setMokadSession(session);
+      localStorage.setItem(MOKAD_KEY, JSON.stringify(session));
+      return session;
+    },
+    [volunteer]
+  );
+
+  const lockMokad = useCallback(() => {
+    setMokadSession(null);
+    localStorage.removeItem(MOKAD_KEY);
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ volunteer, ready, login, coordinatorSession, unlockCoordinator, lockCoordinator }}
+      value={{
+        volunteer,
+        ready,
+        login,
+        coordinatorSession,
+        unlockCoordinator,
+        lockCoordinator,
+        mokadSession,
+        unlockMokad,
+        lockMokad,
+      }}
     >
       {children}
     </AuthContext.Provider>

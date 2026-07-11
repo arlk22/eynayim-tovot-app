@@ -189,6 +189,12 @@ export default function HomePage() {
         </button>
       )}
 
+      {volunteer?.isMokad && (
+        <button type="button" className="home-page__coordinator-link" onClick={() => navigate('/mokad')}>
+          🎧 אזור המוקד
+        </button>
+      )}
+
       {showReminders && (
         <div className="home-page__popup-backdrop" onClick={() => setShowReminders(false)}>
           <div className="home-page__popup" onClick={(e) => e.stopPropagation()}>

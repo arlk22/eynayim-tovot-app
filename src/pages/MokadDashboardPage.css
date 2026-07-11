@@ -1,0 +1,151 @@
+.mokad-dash {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4) var(--space-7);
+}
+
+.mokad-dash__title {
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.mokad-dash__filters {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+}
+
+.mokad-dash__filter {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mokad-dash__filter--active {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.mokad-dash__loading,
+.mokad-dash__error {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.mokad-dash__error {
+  color: var(--color-danger);
+}
+
+.mokad-dash__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.report-card {
+  display: flex;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+}
+
+.report-card__photo {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.report-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.report-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.report-card__category {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.report-card__status {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.report-card__status[data-status="חדש"] {
+  background: rgba(220, 90, 60, 0.15);
+  color: #b6472b;
+}
+
+.report-card__status[data-status="אומת"] {
+  background: rgba(90, 130, 220, 0.15);
+  color: #3a5db0;
+}
+
+.report-card__status[data-status="בטיפול"] {
+  background: rgba(220, 170, 40, 0.18);
+  color: #a3780a;
+}
+
+.report-card__status[data-status="נסגר"] {
+  background: rgba(60, 170, 100, 0.15);
+  color: #2c8558;
+}
+
+.report-card__address {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.report-card__description {
+  font-size: 13px;
+  color: var(--color-text);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.report-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: 12px;
+  color: var(--color-text-faint);
+  margin-top: 4px;
+}
+
+.report-card__attached {
+  color: var(--color-success, #2c8558);
+  font-weight: 700;
+}

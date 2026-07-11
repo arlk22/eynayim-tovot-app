@@ -48,6 +48,41 @@ export function coordinatorAuth(volunteerId, password) {
   });
 }
 
+export function mokadAuth(volunteerId, password) {
+  return request('/api/mokad-auth', {
+    method: 'POST',
+    body: JSON.stringify({ volunteerId, password }),
+  });
+}
+
+export function fetchMokadReports(volunteerId, password) {
+  const params = new URLSearchParams({ volunteerId, password });
+  return request(`/api/mokad/reports?${params}`);
+}
+
+export function fetchMokadReportDetail(volunteerId, password, reportId) {
+  const params = new URLSearchParams({ volunteerId, password, reportId });
+  return request(`/api/mokad/report-detail?${params}`);
+}
+
+export function attachMokadPatrol(volunteerId, password, reportId, patrolId, note) {
+  return request('/api/mokad/attach-patrol', {
+    method: 'POST',
+    body: JSON.stringify({ volunteerId, password, reportId, patrolId, note }),
+  });
+}
+
+export function addMokadLogEntry(volunteerId, password, reportId, actionType, content, newStatus) {
+  return request('/api/mokad/add-log-entry', {
+    method: 'POST',
+    body: JSON.stringify({ volunteerId, password, reportId, actionType, content, newStatus }),
+  });
+}
+
+export function fetchPublicStats() {
+  return request('/api/public/stats');
+}
+
 export function fetchParticipation(volunteerId, password, month) {
   const params = new URLSearchParams({ volunteerId, password, month });
   return request(`/api/coordinator/participation?${params}`);

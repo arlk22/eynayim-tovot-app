@@ -1,5 +1,5 @@
 import { listRecords, updateRecord } from './_lib/airtable.js';
-import { TABLES, VOLUNTEER_FIELDS, COORDINATOR_ROLES } from './_lib/fields.js';
+import { TABLES, VOLUNTEER_FIELDS, COORDINATOR_ROLES, MOKAD_ROLES } from './_lib/fields.js';
 
 function normalizePhone(phone) {
   return String(phone || '').replace(/\D/g, '');
@@ -50,6 +50,7 @@ export default async function handler(req, res) {
       id: match.id,
       name: match.fields[VOLUNTEER_FIELDS.NAME] || '',
       isCoordinator: COORDINATOR_ROLES.includes(match.fields[VOLUNTEER_FIELDS.ROLE]),
+      isMokad: MOKAD_ROLES.includes(match.fields[VOLUNTEER_FIELDS.ROLE]),
     });
   } catch (err) {
     console.error(err);

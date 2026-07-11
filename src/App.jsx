@@ -10,6 +10,9 @@ import SharePage from './pages/SharePage';
 import EmergencyPage from './pages/EmergencyPage';
 import CoordinatorRoute from './components/CoordinatorRoute';
 import CoordinatorDashboardPage from './pages/CoordinatorDashboardPage';
+import MokadRoute from './components/MokadRoute';
+import MokadDashboardPage from './pages/MokadDashboardPage';
+import CommunityPage from './pages/CommunityPage';
 import './App.css';
 
 const EVENT_REPORT_URL = 'https://gdform1.fillout.com/t/fzNH38HwdYus';
@@ -17,7 +20,7 @@ const HAZARD_REPORT_URL = 'https://gdform1.fillout.com/gdform1';
 
 function TopBar() {
   const location = useLocation();
-  if (location.pathname === '/' || location.pathname === '/login') return null;
+  if (location.pathname === '/' || location.pathname === '/login' || location.pathname === '/community') return null;
   return (
     <div className="top-bar">
       <Link to="/" className="top-bar__back">
@@ -34,6 +37,7 @@ export default function App() {
         <TopBar />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/community" element={<CommunityPage />} />
           <Route
             path="/"
             element={
@@ -97,6 +101,16 @@ export default function App() {
                 <CoordinatorRoute>
                   <CoordinatorDashboardPage />
                 </CoordinatorRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mokad"
+            element={
+              <ProtectedRoute>
+                <MokadRoute>
+                  <MokadDashboardPage />
+                </MokadRoute>
               </ProtectedRoute>
             }
           />
