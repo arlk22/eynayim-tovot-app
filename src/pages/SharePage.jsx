@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import './SharePage.css';
 
-const HAZARD_REPORT_URL = 'https://gdform1.fillout.com/gdform1';
-const SHARE_MESSAGE = `שלום! אפשר לדווח על מפגע בשכונה בקלות דרך הקישור הזה: ${HAZARD_REPORT_URL}`;
+const VOLUNTEER_SIGNUP_URL = 'https://gdform1.fillout.com/t/suT19RTEyUus';
+const RESIDENT_HAZARD_URL = 'https://gdform1.fillout.com/t/iNWkw3m1EGus';
 
-export default function SharePage() {
+const VOLUNTEER_MESSAGE = `שלום! מחפשים מתנדבים נוספים ל"עיניים טובות" בהדר — סיורי שכונה קלים ומשמעותיים. מי שחושב/ת שיוכל/תוכל להתמיד מוזמן/ת להירשם כאן: ${VOLUNTEER_SIGNUP_URL}`;
+const HAZARD_MESSAGE = `שלום! אפשר לדווח על מפגע בשכונה בקלות דרך הקישור הזה: ${RESIDENT_HAZARD_URL}`;
+
+function ShareCard({ title, hint, url, message }) {
   const [copied, setCopied] = useState(false);
 
   function shareWhatsApp() {
-    const url = `https://wa.me/?text=${encodeURIComponent(SHARE_MESSAGE)}`;
-    window.open(url, '_blank', 'noopener');
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
   }
 
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(HAZARD_REPORT_URL);
+      await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -23,14 +25,9 @@ export default function SharePage() {
   }
 
   return (
-    <div className="share-page">
-      <span className="share-page__icon" aria-hidden="true">
-        🏠
-      </span>
-      <h1 className="share-page__title">שתפו תושב</h1>
-      <p className="share-page__hint">
-        עוזרים לתושב לדווח על מפגע בשכונה — גם אם הוא לא מתנדב רשום. שתפו את הקישור לטופס דיווח המפגע.
-      </p>
+    <div className="share-page__card">
+      <h2 className="share-page__card-title">{title}</h2>
+      <p className="share-page__hint">{hint}</p>
 
       <button type="button" className="share-page__whatsapp" onClick={shareWhatsApp}>
         📱 שיתוף ב-WhatsApp
@@ -40,7 +37,36 @@ export default function SharePage() {
         {copied ? '✓ הקישור הועתק' : '🔗 העתקת קישור'}
       </button>
 
-      <p className="share-page__link">{HAZARD_REPORT_URL}</p>
+      <p className="share-page__link">{url}</p>
+    </div>
+  );
+}
+
+export default function SharePage() {
+  return (
+    <div className="share-page">
+      <span className="share-page__icon" aria-hidden="true">
+        🏠
+      </span>
+      <h1 className="share-page__title">שתפו תושב</h1>
+      <p className="share-page__intro">
+        תודה על פעילות ההתנדבות שלכם — רוח טובה זו יכולה להדביק תושבים נוספים. שני
+        הטפסים הבאים אפשר לשתף ישירות מהמכשיר שלכם.
+      </p>
+
+      <ShareCard
+        title="🤝 גיוס מתנדבים"
+        hint='מכירים מישהו/י שיתמיד ויעריך את התרומה לפעילויות ב"עיניים טובות"? שתפו את טופס ההרשמה.'
+        url={VOLUNTEER_SIGNUP_URL}
+        message={VOLUNTEER_MESSAGE}
+      />
+
+      <ShareCard
+        title="🟡 דיווח מפגעים – תושבים"
+        hint="עוזרים לתושב לדווח על מפגע בשכונה — גם אם הוא לא מתנדב רשום. כך מגדילים את מאגר הנתונים שלנו."
+        url={RESIDENT_HAZARD_URL}
+        message={HAZARD_MESSAGE}
+      />
     </div>
   );
 }
