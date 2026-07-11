@@ -42,40 +42,52 @@ export function fetchEmergencyContacts() {
 }
 
 export function coordinatorAuth(volunteerId, password) {
-  return request('/api/coordinator-auth', {
+  return request('/api/coordinator', {
     method: 'POST',
-    body: JSON.stringify({ volunteerId, password }),
+    body: JSON.stringify({ action: 'auth', volunteerId, password }),
   });
 }
 
 export function mokadAuth(volunteerId, password) {
-  return request('/api/mokad-auth', {
+  return request('/api/mokad', {
     method: 'POST',
-    body: JSON.stringify({ volunteerId, password }),
+    body: JSON.stringify({ action: 'auth', volunteerId, password }),
   });
 }
 
 export function fetchMokadReports(volunteerId, password) {
-  const params = new URLSearchParams({ volunteerId, password });
-  return request(`/api/mokad/reports?${params}`);
+  return request('/api/mokad', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'reports', volunteerId, password }),
+  });
 }
 
 export function fetchMokadReportDetail(volunteerId, password, reportId) {
-  const params = new URLSearchParams({ volunteerId, password, reportId });
-  return request(`/api/mokad/report-detail?${params}`);
+  return request('/api/mokad', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'report-detail', volunteerId, password, reportId }),
+  });
 }
 
 export function attachMokadPatrol(volunteerId, password, reportId, patrolId, note) {
-  return request('/api/mokad/attach-patrol', {
+  return request('/api/mokad', {
     method: 'POST',
-    body: JSON.stringify({ volunteerId, password, reportId, patrolId, note }),
+    body: JSON.stringify({ action: 'attach-patrol', volunteerId, password, reportId, patrolId, note }),
   });
 }
 
 export function addMokadLogEntry(volunteerId, password, reportId, actionType, content, newStatus) {
-  return request('/api/mokad/add-log-entry', {
+  return request('/api/mokad', {
     method: 'POST',
-    body: JSON.stringify({ volunteerId, password, reportId, actionType, content, newStatus }),
+    body: JSON.stringify({
+      action: 'add-log-entry',
+      volunteerId,
+      password,
+      reportId,
+      actionType,
+      content,
+      newStatus,
+    }),
   });
 }
 
@@ -84,26 +96,30 @@ export function fetchPublicStats() {
 }
 
 export function fetchParticipation(volunteerId, password, month) {
-  const params = new URLSearchParams({ volunteerId, password, month });
-  return request(`/api/coordinator/participation?${params}`);
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'participation', volunteerId, password, month }),
+  });
 }
 
 export function resetVolunteerDevice(volunteerId, password, targetVolunteerId) {
-  return request('/api/coordinator/reset-device', {
+  return request('/api/coordinator', {
     method: 'POST',
-    body: JSON.stringify({ volunteerId, password, targetVolunteerId }),
+    body: JSON.stringify({ action: 'reset-device', volunteerId, password, targetVolunteerId }),
   });
 }
 
 export function fetchCoordinatorEvents(volunteerId, password, month) {
-  const params = new URLSearchParams({ volunteerId, password, month });
-  return request(`/api/coordinator/events?${params}`);
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'events', volunteerId, password, month }),
+  });
 }
 
 export function resolveEvent(volunteerId, password, eventId) {
-  return request('/api/coordinator/resolve-event', {
+  return request('/api/coordinator', {
     method: 'POST',
-    body: JSON.stringify({ volunteerId, password, eventId }),
+    body: JSON.stringify({ action: 'resolve-event', volunteerId, password, eventId }),
   });
 }
 
