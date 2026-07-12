@@ -41,7 +41,7 @@ export const VOLUNTEER_ROLE = {
 };
 
 export const COORDINATOR_ROLES = [VOLUNTEER_ROLE.MANAGER, VOLUNTEER_ROLE.AREA_COORDINATOR];
-export const MOKAD_ROLES = [VOLUNTEER_ROLE.MOKADAN, VOLUNTEER_ROLE.MANAGER];
+export const MOKAD_ROLES = [VOLUNTEER_ROLE.MOKADAN, VOLUNTEER_ROLE.MANAGER, VOLUNTEER_ROLE.AREA_COORDINATOR];
 
 export const PATROL_FIELDS = {
   ID: 'Patrol ID',
@@ -148,6 +148,7 @@ export const REPORT_CATEGORY_FIELDS = {
 
 export const REPORT_SUBCATEGORY_FIELDS = {
   NAME: 'שם תת קטגוריה',
+  CATEGORY: 'שם קטגוריה',
 };
 
 export const HADAR_REPORT_FIELDS = {
@@ -207,6 +208,15 @@ export const ACTIVITY_LOG_FIELDS = {
   VOLUNTEER: 'שם מתנדב',
   FORWARDED_TO: 'הועבר לטיפול',
   TRACKING_PHOTO: 'תמונת מעקב',
+  MUNICIPALITY_RESPONSE_STATUS: 'סטטוס מענה עירייה',
+  MUNICIPALITY_RESPONSE_DATE: 'תאריך מענה',
+};
+
+export const MUNICIPALITY_RESPONSE_STATUS = {
+  AWAITING: 'ממתין למענה',
+  RESPONDED: 'נענה',
+  HANDLED: 'טופל',
+  REJECTED: 'נדחה',
 };
 
 export const ACTIVITY_LOG_ACTION_TYPE = {

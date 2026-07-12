@@ -4,7 +4,9 @@ import {
   fetchMokadReportDetail,
   attachMokadPatrol,
   addMokadLogEntry,
+  setMokadSubcategory,
 } from '../lib/api';
+import PhotoLightbox from '../components/PhotoLightbox';
 import './MokadReportDetail.css';
 
 const ACTION_TYPES = [
@@ -20,10 +22,25 @@ const ACTION_TYPES = [
 
 const STATUSES = ['חדש', 'אומת', 'בטיפול', 'נסגר'];
 
+// מספר הווטסאפ של מוקד עיריית חיפה: 04-8357106 בפורמט בינלאומי (972 + ללא ה-0 המוביל).
+const MOKAD_106_WHATSAPP_NUMBER = '97248357106';
+const MOKAD_106_LABEL = 'מוקד עירוני חיפה 106 (WhatsApp)';
+
 function formatPatrolLabel(p) {
   const dateStr = p.date ? new Date(p.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }) : '';
   const parts = [dateStr, p.startTime, p.routeName || p.routeArea].filter(Boolean);
   return parts.join(' · ');
+}
+
+function formatShortDate(dateStr) {
+  return dateStr ? new Date(dateStr).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : '';
+}
+
+function daysLabel(days) {
+  if (days === null || days === undefined) return 'תאריך לא ידוע';
+  if (days === 0) return 'היום';
+  if (days === 1) return 'אתמול (יום 1)';
+  return `${days} ימים`;
 }
 
 export default function MokadReportDetail({ reportId, onClose, onChanged }) {
@@ -40,6 +57,13 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
   const [logContent, setLogContent] = useState('');
   const [logStatus, setLogStatus] = useState('');
   const [savingLog, setSavingLog] = useState(false);
+  const [forwarding, setForwarding] = useState(false);
+  const [whatsappOpened, setWhatsappOpened] = useState(false);
+  const [whatsappMessageText, setWhatsappMessageText] = useState('');
+  const [lightboxSrc, setLightboxSrc] = useState(null);
+  const [changingStatus, setChangingStatus] = useState(false);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('');
+  const [savingSubcategory, setSavingSubcategory] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -72,6 +96,92 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
       setError('הצמדת הסיור נכשלה, נסו שוב.');
     } finally {
       setAttaching(false);
+    }
+  }
+
+  function handleOpenWhatsapp() {
+    if (!data) return;
+    const lines = [];
+    if (data.report.photos.length > 0) {
+      lines.push(`תמונה: ${window.location.origin}/api/public/photo?id=${data.report.id}`, '');
+    }
+    lines.push(
+      'דיווח מפגע - מתנדבי "עיניים טובות" רובע הדר',
+      '',
+      `קטגוריה: ${data.report.category}`,
+      `תת קטגוריה: ${data.report.subcategory || '—'}`,
+      `כתובת: ${data.report.address}`,
+      `תיאור: ${data.report.description || '—'}`,
+      '',
+      `נמסר ע"י: ${mokadSession.name || 'מוקדן/ית'}, מוקד המתנדבים "עיניים טובות" – רובע הדר`,
+      `מס' דיווח: ${data.report.reportNumber ?? data.report.id}`
+    );
+    const text = lines.join('\n');
+    window.open(
+      `https://wa.me/${MOKAD_106_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+    setWhatsappMessageText(text);
+    setWhatsappOpened(true);
+  }
+
+  async function handleConfirmSent() {
+    if (forwarding) return;
+    setForwarding(true);
+    try {
+      await addMokadLogEntry(
+        mokadSession.volunteerId,
+        mokadSession.password,
+        reportId,
+        'פניה לעירייה',
+        `הודעה שנשלחה בווטסאפ ל${MOKAD_106_LABEL}:\n\n${whatsappMessageText}`,
+        undefined,
+        MOKAD_106_LABEL
+      );
+      setWhatsappOpened(false);
+      await load();
+      onChanged?.();
+    } catch {
+      setError('סימון ההעברה נכשל, נסו שוב.');
+    } finally {
+      setForwarding(false);
+    }
+  }
+
+  async function handleStatusChange(newStatus) {
+    if (!newStatus || newStatus === data.report.status || changingStatus) return;
+    setChangingStatus(true);
+    try {
+      await addMokadLogEntry(
+        mokadSession.volunteerId,
+        mokadSession.password,
+        reportId,
+        'שינוי סטטוס',
+        'עודכן ישירות מכרטיסיית המפגע',
+        newStatus
+      );
+      await load();
+      onChanged?.();
+    } catch {
+      setError('עדכון הסטטוס נכשל, נסו שוב.');
+    } finally {
+      setChangingStatus(false);
+    }
+  }
+
+  async function handleSaveSubcategory() {
+    if (!selectedSubcategoryId || savingSubcategory) return;
+    setSavingSubcategory(true);
+    try {
+      await setMokadSubcategory(mokadSession.volunteerId, mokadSession.password, reportId, selectedSubcategoryId);
+      setSelectedSubcategoryId('');
+      await load();
+      onChanged?.();
+    } catch {
+      setError('שמירת תת הקטגוריה נכשלה, נסו שוב.');
+    } finally {
+      setSavingSubcategory(false);
     }
   }
 
@@ -110,30 +220,97 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
 
         {data && (
           <>
+            {data.possibleDuplicate && (
+              <div className="mokad-detail__duplicate-banner">
+                ⚠️ ייתכן וזהו כפל של דיווח מ-{formatShortDate(data.possibleDuplicate.reportedAt)} באותו רחוב
+                ובאותה קטגוריה ({data.possibleDuplicate.address}). כדאי לבדוק לפני שממשיכים.
+              </div>
+            )}
+
             <h2 className="mokad-detail__title">
               {data.report.category}
               {data.report.subcategory ? ` — ${data.report.subcategory}` : ''}
             </h2>
 
+            <div className="mokad-detail__fields">
+              {data.report.reportNumber != null && (
+                <div>
+                  <strong>מזהה:</strong> {data.report.reportNumber}
+                </div>
+              )}
+              <div>
+                <strong>קטגוריה:</strong> {data.report.category || '—'}
+              </div>
+              <div>
+                <strong>תת קטגוריה:</strong>{' '}
+                {data.report.subcategory || (
+                  <span className="mokad-detail__subcategory-picker">
+                    {data.availableSubcategories?.length > 0 ? (
+                      <>
+                        <select
+                          className="mokad-detail__select mokad-detail__select--inline"
+                          value={selectedSubcategoryId}
+                          onChange={(e) => setSelectedSubcategoryId(e.target.value)}
+                        >
+                          <option value="">בחרו תת קטגוריה…</option>
+                          {data.availableSubcategories.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="mokad-detail__btn"
+                          onClick={handleSaveSubcategory}
+                          disabled={!selectedSubcategoryId || savingSubcategory}
+                        >
+                          {savingSubcategory ? 'שומר…' : 'שמור'}
+                        </button>
+                      </>
+                    ) : (
+                      'לא צוינה'
+                    )}
+                  </span>
+                )}
+              </div>
+              <div>
+                <strong>גיל דיווח:</strong> {daysLabel(data.report.daysSinceReport)}
+              </div>
+            </div>
+
             {data.report.photos.length > 0 && (
               <div className="mokad-detail__photos">
                 {data.report.photos.map((url) => (
-                  <img key={url} src={url} alt="" className="mokad-detail__photo" />
+                  <img
+                    key={url}
+                    src={url}
+                    alt=""
+                    className="mokad-detail__photo"
+                    onClick={() => setLightboxSrc(url)}
+                  />
                 ))}
               </div>
             )}
 
             <div className="mokad-detail__meta">
-              <span data-status={data.report.status} className="mokad-detail__status">
-                {data.report.status || 'ללא סטטוס'}
-              </span>
+              <select
+                className="mokad-detail__status-select"
+                data-status={data.report.status}
+                value={data.report.status || ''}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                disabled={changingStatus}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
               {data.report.urgency && <span>דחיפות: {data.report.urgency}</span>}
             </div>
 
-            <p className="mokad-detail__address">
-              {data.report.address}
-              {data.report.houseNumber ? ` ${data.report.houseNumber}` : ''}
-            </p>
+            <p className="mokad-detail__address">{data.report.address}</p>
             {data.report.description && <p className="mokad-detail__description">{data.report.description}</p>}
 
             <div className="mokad-detail__reporter">
@@ -176,6 +353,32 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
                 value={patrolNote}
                 onChange={(e) => setPatrolNote(e.target.value)}
               />
+            </section>
+
+            <section className="mokad-detail__section">
+              <h3>העברה לגורם מטפל</h3>
+              <button
+                type="button"
+                className="mokad-detail__btn mokad-detail__btn--whatsapp"
+                onClick={handleOpenWhatsapp}
+              >
+                {`📲 פתח בווטסאפ ל${MOKAD_106_LABEL}`}
+              </button>
+              {whatsappOpened && (
+                <>
+                  <p className="mokad-detail__whatsapp-hint">
+                    לאחר ששלחתם בפועל את ההודעה בווטסאפ, אשרו כאן כדי לרשום זאת במעקב:
+                  </p>
+                  <button
+                    type="button"
+                    className="mokad-detail__btn"
+                    onClick={handleConfirmSent}
+                    disabled={forwarding}
+                  >
+                    {forwarding ? 'שומר…' : '✅ ההודעה נשלחה בפועל'}
+                  </button>
+                </>
+              )}
             </section>
 
             <section className="mokad-detail__section">
@@ -232,8 +435,15 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
                       </span>
                     </div>
                     {entry.volunteerName && <p className="mokad-detail__log-by">מאת: {entry.volunteerName}</p>}
-                    {entry.content && <p>{entry.content}</p>}
-                    {entry.photoUrl && <img src={entry.photoUrl} alt="" className="mokad-detail__log-photo" />}
+                    {entry.content && <p className="mokad-detail__log-content">{entry.content}</p>}
+                    {entry.photoUrl && (
+                      <img
+                        src={entry.photoUrl}
+                        alt=""
+                        className="mokad-detail__log-photo"
+                        onClick={() => setLightboxSrc(entry.photoUrl)}
+                      />
+                    )}
                   </li>
                 ))}
                 {data.log.length === 0 && <p className="mokad-dash__loading">אין רשומות בלוג עדיין.</p>}
@@ -242,6 +452,7 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
           </>
         )}
       </div>
+      <PhotoLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
     </div>
   );
 }

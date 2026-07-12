@@ -12,11 +12,163 @@
   margin-bottom: var(--space-4);
 }
 
+.mokad-dash__tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.mokad-dash__tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mokad-dash__tab--active {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.mokad-followups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.followup-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-card);
+}
+
+.followup-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.followup-card__days {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-danger);
+}
+
+.followup-card__address {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.followup-card__forwarded {
+  font-size: 12px;
+  color: var(--color-text-faint);
+  margin-bottom: var(--space-2);
+}
+
+.followup-card__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.mokad-dash__tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.mokad-dash__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-3) var(--space-2);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  text-align: center;
+}
+
+.mokad-dash__tile--total {
+  cursor: default;
+  background: var(--color-surface-muted);
+}
+
+.mokad-dash__tile--active {
+  background: var(--color-primary);
+}
+
+.mokad-dash__tile--active .mokad-dash__tile-number,
+.mokad-dash__tile--active .mokad-dash__tile-label {
+  color: var(--color-primary-contrast);
+}
+
+.mokad-dash__tile-number {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.mokad-dash__tile-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.2;
+}
+
 .mokad-dash__filters {
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
+  margin-bottom: var(--space-3);
+}
+
+.mokad-dash__selects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
   margin-bottom: var(--space-4);
+}
+
+.mokad-dash__select {
+  flex: 1 1 auto;
+  min-width: 110px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.mokad-dash__clear-filters {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mokad-dash__table-wrap {
+  display: none;
+}
+
+.mokad-dash__empty-detail {
+  display: none;
 }
 
 .mokad-dash__filter {
@@ -148,4 +300,79 @@
 .report-card__attached {
   color: var(--color-success, #2c8558);
   font-weight: 700;
+}
+
+@media (min-width: 1024px) {
+  .mokad-dash {
+    display: grid;
+    grid-template-columns: minmax(360px, 460px) 1fr;
+    align-items: start;
+    gap: var(--space-4);
+    max-width: 1200px;
+    padding: var(--space-4) var(--space-5) var(--space-7);
+  }
+
+  .mokad-dash__main {
+    max-width: none;
+    min-width: 0;
+  }
+
+  .mokad-dash__list {
+    display: none;
+  }
+
+  .mokad-dash__table-wrap {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+  }
+
+  .mokad-dash__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .mokad-dash__table th,
+  .mokad-dash__table td {
+    padding: 10px 12px;
+    text-align: start;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+  }
+
+  .mokad-dash__th-btn {
+    border: none;
+    background: none;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .mokad-dash__table tbody tr {
+    cursor: pointer;
+  }
+
+  .mokad-dash__table tbody tr:hover {
+    background: var(--color-surface-muted);
+  }
+
+  .mokad-dash__empty-detail {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 240px;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: 14px;
+    position: sticky;
+    top: var(--space-4);
+  }
 }

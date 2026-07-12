@@ -13,6 +13,7 @@ import emergencyContacts from '../api/emergency-contacts.js';
 import coordinator from '../api/coordinator.js';
 import mokad from '../api/mokad.js';
 import publicStats from '../api/public/stats.js';
+import publicPhoto from '../api/public/photo.js';
 import reminders from '../api/reminders.js';
 
 const app = express();
@@ -27,6 +28,7 @@ app.all('/api/emergency-contacts', emergencyContacts);
 app.all('/api/coordinator', coordinator);
 app.all('/api/mokad', mokad);
 app.all('/api/public/stats', publicStats);
+app.all('/api/public/photo', publicPhoto);
 app.all('/api/reminders', reminders);
 
 const PORT = process.env.API_PORT || 5174;

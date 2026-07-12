@@ -176,6 +176,12 @@ export default function HomePage() {
           onClick={() => navigate('/emergency')}
         />
         <Card
+          icon="📊"
+          title="נתונים והשפעה"
+          accent="mint"
+          onClick={() => navigate('/stats')}
+        />
+        <Card
           icon="🏠"
           title="שתפו תושב"
           accent="blue"

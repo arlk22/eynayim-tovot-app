@@ -1,0 +1,31 @@
+.stats-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-5) var(--space-7);
+  text-align: center;
+}
+
+.stats-page__icon {
+  font-size: 44px;
+}
+
+.stats-page__title {
+  font-size: 20px;
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.stats-page__intro {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin-bottom: var(--space-5);
+}
+
+.stats-page__loading,
+.stats-page__error {
+  color: var(--color-text-muted);
+}

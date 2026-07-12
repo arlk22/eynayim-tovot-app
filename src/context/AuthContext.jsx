@@ -54,8 +54,8 @@ export function AuthProvider({ children }) {
   const unlockMokad = useCallback(
     async (password) => {
       if (!volunteer) throw new Error('not_logged_in');
-      await mokadAuth(volunteer.id, password);
-      const session = { volunteerId: volunteer.id, password };
+      const { name } = await mokadAuth(volunteer.id, password);
+      const session = { volunteerId: volunteer.id, password, name };
       setMokadSession(session);
       localStorage.setItem(MOKAD_KEY, JSON.stringify(session));
       return session;

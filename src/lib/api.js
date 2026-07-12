@@ -76,7 +76,28 @@ export function attachMokadPatrol(volunteerId, password, reportId, patrolId, not
   });
 }
 
-export function addMokadLogEntry(volunteerId, password, reportId, actionType, content, newStatus) {
+export function setMokadSubcategory(volunteerId, password, reportId, subcategoryId) {
+  return request('/api/mokad', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'set-subcategory', volunteerId, password, reportId, subcategoryId }),
+  });
+}
+
+export function fetchMunicipalityFollowups(volunteerId, password) {
+  return request('/api/mokad', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'municipality-followups', volunteerId, password }),
+  });
+}
+
+export function setMunicipalityResponse(volunteerId, password, logEntryId, status) {
+  return request('/api/mokad', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'set-municipality-response', volunteerId, password, logEntryId, status }),
+  });
+}
+
+export function addMokadLogEntry(volunteerId, password, reportId, actionType, content, newStatus, forwardedTo) {
   return request('/api/mokad', {
     method: 'POST',
     body: JSON.stringify({
@@ -87,6 +108,7 @@ export function addMokadLogEntry(volunteerId, password, reportId, actionType, co
       actionType,
       content,
       newStatus,
+      forwardedTo,
     }),
   });
 }

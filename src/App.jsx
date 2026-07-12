@@ -13,6 +13,7 @@ import CoordinatorDashboardPage from './pages/CoordinatorDashboardPage';
 import MokadRoute from './components/MokadRoute';
 import MokadDashboardPage from './pages/MokadDashboardPage';
 import CommunityPage from './pages/CommunityPage';
+import StatsPage from './pages/StatsPage';
 import './App.css';
 
 const EVENT_REPORT_URL = 'https://gdform1.fillout.com/t/fzNH38HwdYus';
@@ -91,6 +92,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <EmergencyPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stats"
+            element={
+              <ProtectedRoute>
+                <StatsPage />
               </ProtectedRoute>
             }
           />

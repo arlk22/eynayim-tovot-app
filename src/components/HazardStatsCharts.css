@@ -1,0 +1,111 @@
+.stats-block__headline {
+  display: flex;
+  gap: var(--space-4);
+  width: 100%;
+  margin-bottom: var(--space-5);
+}
+
+.stats-block__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-3);
+  box-shadow: var(--shadow-card);
+}
+
+.stats-block__stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.stats-block__stat-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.stats-block__section {
+  width: 100%;
+  text-align: start;
+  margin-bottom: var(--space-5);
+}
+
+.stats-block__section h2 {
+  font-size: 15px;
+  margin-bottom: var(--space-3);
+  text-align: center;
+}
+
+.stats-block__chart-note {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  text-align: center;
+  margin-bottom: var(--space-2);
+}
+
+.stats-block__headline--secondary {
+  margin-bottom: 0;
+}
+
+.stats-block__bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.stats-block__bar-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 28px;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.stats-block__bar-label {
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats-block__bar-track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  overflow: hidden;
+}
+
+.stats-block__bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+}
+
+.stats-block__bar-fill[data-status="חדש"] {
+  background: #d05a3c;
+}
+
+.stats-block__bar-fill[data-status="אומת"] {
+  background: #3a5db0;
+}
+
+.stats-block__bar-fill[data-status="בטיפול"] {
+  background: #c99618;
+}
+
+.stats-block__bar-fill[data-status="נסגר"] {
+  background: #2c8558;
+}
+
+.stats-block__bar-fill--category {
+  background: var(--color-accent, var(--color-primary));
+}
+
+.stats-block__bar-count {
+  text-align: end;
+  color: var(--color-text-faint);
+  font-weight: 700;
+}
