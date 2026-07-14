@@ -195,6 +195,12 @@ export default function HomePage() {
         </button>
       )}
 
+      {volunteer?.isCoordinator && (
+        <button type="button" className="home-page__coordinator-link" onClick={() => navigate('/routes')}>
+          🗺️ מסלולי סיור
+        </button>
+      )}
+
       {volunteer?.isMokad && (
         <button type="button" className="home-page__coordinator-link" onClick={() => navigate('/mokad')}>
           🎧 אזור המוקד

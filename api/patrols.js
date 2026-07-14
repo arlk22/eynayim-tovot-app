@@ -27,7 +27,7 @@ export default async function handler(req, res) {
         filterByFormula: `AND(DATETIME_FORMAT({${PATROL_FIELDS.DATE}}, 'YYYY-MM')='${month}', NOT({${PATROL_FIELDS.STATUS}}='${PATROL_STATUS.DRAFT}'))`,
         sort: [{ field: PATROL_FIELDS.DATE, direction: 'asc' }],
       }),
-      listRecords(TABLES.PATROL_ROUTES, { fields: [ROUTE_FIELDS.NAME] }),
+      listRecords(TABLES.PATROL_ROUTES, { fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK] }),
       listRecords(TABLES.REGISTRATIONS, {
         filterByFormula: `{${REGISTRATION_FIELDS.STATUS}}='${REGISTRATION_STATUS.REGISTERED}'`,
         fields: [REGISTRATION_FIELDS.PATROLS, REGISTRATION_FIELDS.VOLUNTEER],
@@ -36,6 +36,7 @@ export default async function handler(req, res) {
     ]);
 
     const routeNameById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.NAME] || '']));
+    const routeLinkById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.LINK] || '']));
     const volunteerNameById = new Map(volunteers.map((v) => [v.id, v.fields[VOLUNTEER_FIELDS.NAME] || '']));
 
     const registrationsByPatrolId = new Map();
@@ -60,6 +61,7 @@ export default async function handler(req, res) {
         startTime: f[PATROL_FIELDS.START_TIME] || null,
         endTime: f[PATROL_FIELDS.END_TIME] || null,
         routeName: routeId ? routeNameById.get(routeId) || null : null,
+        routeLink: routeId ? routeLinkById.get(routeId) || null : null,
         leader: f[PATROL_FIELDS.LEADER] || null,
         maxParticipants: f[PATROL_FIELDS.MAX_PARTICIPANTS] ?? null,
         spotsLeft: f[PATROL_FIELDS.SPOTS_LEFT] ?? null,

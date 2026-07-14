@@ -182,7 +182,22 @@ export default function PatrolSignupPage() {
                   </strong>
                   <span>{p.startTime}{p.endTime ? `-${p.endTime}` : ''}</span>
                 </div>
-                {p.routeName && <p className="patrol-card__route">מסלול: {p.routeName}</p>}
+                {p.routeName && (
+                  <p className="patrol-card__route">
+                    מסלול: {p.routeName}
+                    {p.routeLink && (
+                      <a
+                        href={p.routeLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="patrol-card__route-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        🔗 מסלול הליכה
+                      </a>
+                    )}
+                  </p>
+                )}
                 {p.leader && <p className="patrol-card__leader">מוביל: {p.leader}</p>}
 
                 <p className="patrol-card__count">
@@ -236,6 +251,16 @@ export default function PatrolSignupPage() {
                 <span>
                   {p.dayOfWeek} {p.date?.slice(8, 10)}/{p.date?.slice(5, 7)}
                   {p.routeName ? ` — ${p.routeName}` : ''}
+                  {p.routeLink && (
+                    <a
+                      href={p.routeLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="patrol-card__route-link"
+                    >
+                      🔗 מסלול
+                    </a>
+                  )}
                 </span>
               </li>
             ))}

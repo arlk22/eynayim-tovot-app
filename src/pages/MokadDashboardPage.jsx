@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { fetchMokadReports, fetchMunicipalityFollowups, setMunicipalityResponse } from '../lib/api';
 import MokadReportDetail from './MokadReportDetail';
+import HazardMap from '../components/HazardMap';
 import './MokadDashboardPage.css';
 
 const STATUS_FILTERS = ['הכל', 'חדש', 'אומת', 'בטיפול', 'נסגר'];
@@ -121,6 +122,25 @@ export default function MokadDashboardPage() {
     return counts;
   }, [reports]);
 
+  // Internal מוקד map shows the full address (house number included) and
+  // links back to the actual report — unlike the public map, which is
+  // deliberately street-level only. This is a staff tool, not a public one.
+  const mapLocations = useMemo(
+    () =>
+      reports
+        .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number')
+        .map((r) => ({
+          id: r.id,
+          lat: r.lat,
+          lng: r.lng,
+          category: r.category,
+          subcategory: r.subcategory,
+          label: r.address,
+          closed: r.status === 'נסגר',
+        })),
+    [reports]
+  );
+
   const categoryOptions = useMemo(
     () => [...new Set(reports.map((r) => r.category).filter(Boolean))].sort(),
     [reports]
@@ -200,7 +220,18 @@ export default function MokadDashboardPage() {
           >
             מעקב פניות לעירייה{followups.length > 0 ? ` (${followups.length})` : ''}
           </button>
+          <button
+            type="button"
+            className={`mokad-dash__tab${view === 'map' ? ' mokad-dash__tab--active' : ''}`}
+            onClick={() => setView('map')}
+          >
+            מפה
+          </button>
         </div>
+
+        {view === 'map' && (
+          <HazardMap locations={mapLocations} onLocationClick={(id) => setSelectedReportId(id)} />
+        )}
 
         {view === 'followups' && (
           <div className="mokad-followups">

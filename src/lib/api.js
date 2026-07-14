@@ -145,6 +145,20 @@ export function resolveEvent(volunteerId, password, eventId) {
   });
 }
 
+export function fetchRoutes(volunteerId, password) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'list-routes', volunteerId, password }),
+  });
+}
+
+export function saveRoute(volunteerId, password, { routeId, name, streets, customLink }) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'save-route', volunteerId, password, routeId, name, streets, customLink }),
+  });
+}
+
 export function fetchReminders(volunteerId) {
   return request(`/api/reminders?volunteerId=${encodeURIComponent(volunteerId)}`);
 }

@@ -1,0 +1,222 @@
+.routes-builder {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4) var(--space-7);
+}
+
+.routes-builder__title {
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: var(--space-2);
+}
+
+.routes-builder__intro {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.routes-builder__form {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.routes-builder__form-title {
+  font-size: 15px;
+  margin: 0;
+}
+
+.routes-builder__label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.routes-builder__input {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: inherit;
+  width: 100%;
+}
+
+.routes-builder__streets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.routes-builder__street-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.routes-builder__street-index {
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-faint);
+}
+
+.routes-builder__icon-btn {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.routes-builder__icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.routes-builder__icon-btn--danger {
+  color: var(--color-danger);
+}
+
+.routes-builder__add-street {
+  align-self: flex-start;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.routes-builder__preview-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.routes-builder__tip {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.routes-builder__error {
+  color: var(--color-danger);
+  font-size: 13px;
+  margin: 0;
+}
+
+.routes-builder__form-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.routes-builder__save {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.routes-builder__save:disabled {
+  opacity: 0.6;
+}
+
+.routes-builder__cancel {
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.routes-builder__list-title {
+  font-size: 15px;
+  margin-bottom: var(--space-3);
+}
+
+.routes-builder__loading {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.routes-builder__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.route-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.route-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.route-card__edit {
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.route-card__streets {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.route-card__link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+}

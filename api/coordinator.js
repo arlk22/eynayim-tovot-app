@@ -1,4 +1,4 @@
-import { listRecords, updateRecord } from './_lib/airtable.js';
+import { listRecords, updateRecord, createRecord } from './_lib/airtable.js';
 import { verifyCoordinator } from './_lib/coordinator-auth.js';
 import {
   TABLES,
@@ -8,7 +8,13 @@ import {
   REGISTRATION_STATUS,
   EVENT_FIELDS,
   EVENT_STATUS,
+  ROUTE_FIELDS,
 } from './_lib/fields.js';
+
+function buildGoogleMapsLink(streets) {
+  const points = streets.map((s) => encodeURIComponent(`${s.trim()}, חיפה`));
+  return `https://www.google.com/maps/dir/${points.join('/')}`;
+}
 
 // Single consolidated endpoint for all coordinator actions (Vercel Hobby caps
 // serverless functions at 12; this used to be 5 separate files).
@@ -140,6 +146,64 @@ async function handleResolveEvent(body, res) {
   }
 }
 
+async function handleListRoutes(body, res) {
+  try {
+    const routes = await listRecords(TABLES.PATROL_ROUTES, {
+      fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.STREETS_LIST],
+      sort: [{ field: ROUTE_FIELDS.NAME, direction: 'asc' }],
+    });
+
+    const result = routes.map((r) => {
+      const f = r.fields;
+      const streetsRaw = f[ROUTE_FIELDS.STREETS_LIST] || '';
+      return {
+        id: r.id,
+        name: f[ROUTE_FIELDS.NAME] || '',
+        link: f[ROUTE_FIELDS.LINK] || '',
+        streets: streetsRaw ? streetsRaw.split('\n').filter(Boolean) : [],
+      };
+    });
+
+    res.status(200).json({ routes: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load routes' });
+  }
+}
+
+async function handleSaveRoute(body, res) {
+  const { routeId, name, streets, customLink } = body;
+  if (!name || !Array.isArray(streets) || streets.length < 2) {
+    res.status(400).json({ error: 'invalid_route' });
+    return;
+  }
+  if (customLink && !/^https?:\/\//.test(customLink)) {
+    res.status(400).json({ error: 'invalid_link' });
+    return;
+  }
+
+  try {
+    const link = customLink || buildGoogleMapsLink(streets);
+    const fields = {
+      [ROUTE_FIELDS.NAME]: name,
+      [ROUTE_FIELDS.STREETS_LIST]: streets.join('\n'),
+      [ROUTE_FIELDS.LINK]: link,
+    };
+
+    let record;
+    if (routeId) {
+      record = await updateRecord(TABLES.PATROL_ROUTES, routeId, fields);
+    } else {
+      record = await createRecord(TABLES.PATROL_ROUTES, fields);
+    }
+
+    res.status(200).json({ ok: true, route: { id: record.id, name, streets, link } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'save_failed' });
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -169,6 +233,12 @@ export default async function handler(req, res) {
       return;
     case 'resolve-event':
       await handleResolveEvent(body, res);
+      return;
+    case 'list-routes':
+      await handleListRoutes(body, res);
+      return;
+    case 'save-route':
+      await handleSaveRoute(body, res);
       return;
     default:
       res.status(400).json({ error: 'unknown_action' });

@@ -127,6 +127,13 @@
   margin: 0;
 }
 
+.patrol-card__route-link {
+  margin-inline-start: 8px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
 .patrol-card__encourage {
   font-size: 13px;
   font-weight: 600;

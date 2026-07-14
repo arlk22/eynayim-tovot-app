@@ -37,6 +37,9 @@ export default async function handler(req, res) {
           HADAR_REPORT_FIELDS.REPORT_TYPE,
           HADAR_REPORT_FIELDS.REPORTED_AT,
           HADAR_REPORT_FIELDS.STREET,
+          HADAR_REPORT_FIELDS.LAT,
+          HADAR_REPORT_FIELDS.LNG,
+          HADAR_REPORT_FIELDS.DISPLAYED_ADDRESS,
         ],
       }),
       listRecords(TABLES.REPORT_CATEGORIES, { fields: [REPORT_CATEGORY_FIELDS.NAME] }),
@@ -83,6 +86,7 @@ export default async function handler(req, res) {
     const monthTotals = new Map();
     const leadingIssues = new Map(); // subcategory -> { category, open, closed }
     const streetCategoryCounts = new Map(); // "streetId|category" -> { street, category, open, closed }
+    const locations = []; // precise pin per report, but the label text is street-level only (no house number)
 
     for (const r of reports) {
       const f = r.fields;
@@ -118,6 +122,20 @@ export default async function handler(req, res) {
         else entry.open += 1;
         streetCategoryCounts.set(key, entry);
       }
+
+      const lat = f[HADAR_REPORT_FIELDS.LAT];
+      const lng = f[HADAR_REPORT_FIELDS.LNG];
+      if (typeof lat === 'number' && typeof lng === 'number') {
+        locations.push({
+          lat,
+          lng,
+          category: categoryName,
+          subcategory: f[HADAR_REPORT_FIELDS.SUBCATEGORY_DISPLAY] || '',
+          // Street + city only — house number is deliberately never sent here.
+          label: f[HADAR_REPORT_FIELDS.DISPLAYED_ADDRESS] ? `${f[HADAR_REPORT_FIELDS.DISPLAYED_ADDRESS]}, ישראל` : '',
+          closed: isClosed,
+        });
+      }
     }
 
     const byMonth = [...monthTotals.values()]
@@ -140,6 +158,7 @@ export default async function handler(req, res) {
       byMonth,
       leadingIssues: leadingIssuesList,
       byStreetCategory,
+      locations,
     });
   } catch (err) {
     console.error(err);

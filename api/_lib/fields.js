@@ -76,6 +76,8 @@ export const ROUTE_FIELDS = {
   MEETING_POINT: 'נקודת מפגש',
   DESCRIPTION: 'תיאור מסלול הסיור',
   MAP: 'מפה',
+  LINK: 'קישור למסלול',
+  STREETS_LIST: 'רחובות המסלול',
   ACTIVE: 'פעיל',
   SPECIAL_INSTRUCTIONS: 'הנחיות מיוחדות',
   PATROLS: 'Patrols',
@@ -179,6 +181,8 @@ export const HADAR_REPORT_FIELDS = {
   DAYS_SINCE_REPORT: 'ימים מאז דיווח',
   VERIFYING_PATROL: 'סיור מאמת',
   ACTIVITY_LOG: 'Activity_Log',
+  LAT: 'Lat',
+  LNG: 'Lng',
 };
 
 export const HADAR_REPORT_TYPE = {

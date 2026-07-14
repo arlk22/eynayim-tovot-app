@@ -109,6 +109,8 @@ async function handleReports(body, res) {
         requiresVisit: !!f[HADAR_REPORT_FIELDS.REQUIRES_VISIT],
         hasVerifyingPatrol: patrolLinks.length > 0,
         hasBeenForwarded: forwardedReportIds.has(r.id),
+        lat: typeof f[HADAR_REPORT_FIELDS.LAT] === 'number' ? f[HADAR_REPORT_FIELDS.LAT] : null,
+        lng: typeof f[HADAR_REPORT_FIELDS.LNG] === 'number' ? f[HADAR_REPORT_FIELDS.LNG] : null,
       };
     });
 

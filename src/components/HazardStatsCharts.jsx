@@ -9,6 +9,7 @@ import {
   Bar,
   CartesianGrid,
 } from 'recharts';
+import HazardMap from './HazardMap';
 import './HazardStatsCharts.css';
 
 const CHART_COLORS = { open: '#dc9a28', closed: '#2c8558' };
@@ -47,6 +48,13 @@ export default function HazardStatsCharts({ stats }) {
           <span className="stats-block__stat-label">מהדיווחים טופלו וסגורים</span>
         </div>
       </div>
+
+      {stats.locations?.length > 0 && (
+        <section className="stats-block__section">
+          <h2>מפת מפגעים</h2>
+          <HazardMap locations={stats.locations} />
+        </section>
+      )}
 
       <section className="stats-block__section">
         <h2>סטטוס הדיווחים</h2>
