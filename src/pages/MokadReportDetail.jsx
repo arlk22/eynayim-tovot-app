@@ -43,6 +43,28 @@ function daysLabel(days) {
   return `${days} ימים`;
 }
 
+function buildWhatsappMessage(data, mokadSession) {
+  const lines = [];
+  if (data.report.photos.length > 0) {
+    // הקישור חייב לעמוד על שורה משלו, בלי טקסט עברי (RTL) צמוד אליו —
+    // כשמערבבים RTL עם קישור LTR שמכיל ? ו-= באותה שורה, וואטסאפ מציג
+    // ולעיתים גם פותח כתובת מעורבבת/שבורה (בעיית bidi מוכרת).
+    lines.push('תמונה:', `${window.location.origin}/api/public/photo?id=${data.report.id}`, '');
+  }
+  lines.push(
+    'דיווח מפגע - מתנדבי "עיניים טובות" רובע הדר',
+    '',
+    `קטגוריה: ${data.report.category}`,
+    `תת קטגוריה: ${data.report.subcategory || '—'}`,
+    `כתובת: ${data.report.address}`,
+    `תיאור: ${data.report.description || '—'}`,
+    '',
+    `נמסר ע"י: ${mokadSession.name || 'מוקדן/ית'}, מוקד המתנדבים "עיניים טובות" – רובע הדר`,
+    `מס' דיווח: ${data.report.reportNumber ?? data.report.id}`
+  );
+  return lines.join('\n');
+}
+
 export default function MokadReportDetail({ reportId, onClose, onChanged }) {
   const { mokadSession } = useAuth();
   const [data, setData] = useState(null);
@@ -78,6 +100,12 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (data && !whatsappMessageText) {
+      setWhatsappMessageText(buildWhatsappMessage(data, mokadSession));
+    }
+  }, [data, mokadSession, whatsappMessageText]);
+
   async function handleAttach() {
     if (!selectedPatrolId) return;
     setAttaching(true);
@@ -99,30 +127,13 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
     }
   }
 
-  function handleOpenWhatsapp() {
-    if (!data) return;
-    const lines = [];
-    if (data.report.photos.length > 0) {
-      lines.push(`תמונה: ${window.location.origin}/api/public/photo?id=${data.report.id}`, '');
-    }
-    lines.push(
-      'דיווח מפגע - מתנדבי "עיניים טובות" רובע הדר',
-      '',
-      `קטגוריה: ${data.report.category}`,
-      `תת קטגוריה: ${data.report.subcategory || '—'}`,
-      `כתובת: ${data.report.address}`,
-      `תיאור: ${data.report.description || '—'}`,
-      '',
-      `נמסר ע"י: ${mokadSession.name || 'מוקדן/ית'}, מוקד המתנדבים "עיניים טובות" – רובע הדר`,
-      `מס' דיווח: ${data.report.reportNumber ?? data.report.id}`
-    );
-    const text = lines.join('\n');
+  function handleSendWhatsapp() {
+    if (!whatsappMessageText) return;
     window.open(
-      `https://wa.me/${MOKAD_106_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`,
+      `https://wa.me/${MOKAD_106_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessageText)}`,
       '_blank',
       'noopener,noreferrer'
     );
-    setWhatsappMessageText(text);
     setWhatsappOpened(true);
   }
 
@@ -319,7 +330,40 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
             </div>
 
             <section className="mokad-detail__section">
-              <h3>הצמדה לסיור</h3>
+              <h3>העברה לגורם מטפל</h3>
+              <p className="mokad-detail__whatsapp-hint">ניתן לערוך את ההודעה לפני השליחה:</p>
+              <textarea
+                className="mokad-detail__textarea mokad-detail__whatsapp-preview"
+                value={whatsappMessageText}
+                onChange={(e) => setWhatsappMessageText(e.target.value)}
+              />
+              <button
+                type="button"
+                className="mokad-detail__btn mokad-detail__btn--whatsapp"
+                onClick={handleSendWhatsapp}
+                disabled={!whatsappMessageText}
+              >
+                📲 שלח בווטסאפ למוקד עירוני חיפה 106
+              </button>
+              {whatsappOpened && (
+                <>
+                  <p className="mokad-detail__whatsapp-hint">
+                    לאחר ששלחתם בפועל את ההודעה בווטסאפ, אשרו כאן כדי לרשום זאת במעקב:
+                  </p>
+                  <button
+                    type="button"
+                    className="mokad-detail__btn"
+                    onClick={handleConfirmSent}
+                    disabled={forwarding}
+                  >
+                    {forwarding ? 'שומר…' : '✅ ההודעה נשלחה בפועל'}
+                  </button>
+                </>
+              )}
+            </section>
+
+            <section className="mokad-detail__section">
+              <h3>בקשת עימות מפגע מסיור השטח הקרוב</h3>
               {data.report.verifyingPatrolId && (
                 <p className="mokad-detail__attached-note">✓ מוצמד כבר לסיור</p>
               )}
@@ -353,32 +397,6 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
                 value={patrolNote}
                 onChange={(e) => setPatrolNote(e.target.value)}
               />
-            </section>
-
-            <section className="mokad-detail__section">
-              <h3>העברה לגורם מטפל</h3>
-              <button
-                type="button"
-                className="mokad-detail__btn mokad-detail__btn--whatsapp"
-                onClick={handleOpenWhatsapp}
-              >
-                {`📲 פתח בווטסאפ ל${MOKAD_106_LABEL}`}
-              </button>
-              {whatsappOpened && (
-                <>
-                  <p className="mokad-detail__whatsapp-hint">
-                    לאחר ששלחתם בפועל את ההודעה בווטסאפ, אשרו כאן כדי לרשום זאת במעקב:
-                  </p>
-                  <button
-                    type="button"
-                    className="mokad-detail__btn"
-                    onClick={handleConfirmSent}
-                    disabled={forwarding}
-                  >
-                    {forwarding ? 'שומר…' : '✅ ההודעה נשלחה בפועל'}
-                  </button>
-                </>
-              )}
             </section>
 
             <section className="mokad-detail__section">

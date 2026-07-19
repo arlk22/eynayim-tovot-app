@@ -158,6 +158,11 @@
   resize: vertical;
 }
 
+.mokad-detail__whatsapp-preview {
+  min-height: 160px;
+  margin-bottom: var(--space-2);
+}
+
 .mokad-detail__btn {
   flex-shrink: 0;
   padding: 10px 16px;
