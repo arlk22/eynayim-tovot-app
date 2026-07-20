@@ -1,4 +1,5 @@
 import { listRecords, getRecord } from './_lib/airtable.js';
+import { wrapHandler } from './_lib/usage-tracker.js';
 import {
   TABLES,
   VOLUNTEER_FIELDS,
@@ -11,13 +12,15 @@ import {
   REGISTRATION_STATUS,
 } from './_lib/fields.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
   const { volunteerId } = req.query || {};
+
+  res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
 
   try {
     const [volunteers, patrols, announcements] = await Promise.all([
@@ -90,3 +93,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to load home stats' });
   }
 }
+
+export default wrapHandler('home-stats', handler);

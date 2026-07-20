@@ -1,11 +1,14 @@
 import { listRecords } from './_lib/airtable.js';
+import { wrapHandler } from './_lib/usage-tracker.js';
 import { TABLES, EMERGENCY_CONTACT_FIELDS } from './_lib/fields.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
+
+  res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
 
   try {
     const contacts = await listRecords(TABLES.EMERGENCY_CONTACTS, {
@@ -25,3 +28,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to load emergency contacts' });
   }
 }
+
+export default wrapHandler('emergency-contacts', handler);

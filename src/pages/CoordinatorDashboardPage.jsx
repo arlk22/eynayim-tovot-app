@@ -5,6 +5,7 @@ import {
   resetVolunteerDevice,
   fetchCoordinatorEvents,
   resolveEvent,
+  fetchUsageSummary,
 } from '../lib/api';
 import './CoordinatorDashboardPage.css';
 
@@ -243,6 +244,70 @@ function EventsTab() {
   );
 }
 
+function UsageBarList({ rows }) {
+  const max = Math.max(1, ...rows.map((r) => r.calls));
+  return (
+    <div className="usage-bar-list">
+      {rows.map((r) => (
+        <div key={r.label} className="usage-bar-row">
+          <div className="usage-bar-row__top">
+            <span className="usage-bar-row__label">{r.label}</span>
+            <span className="usage-bar-row__count">{r.calls}</span>
+          </div>
+          <div className="usage-bar-row__track">
+            <div className="usage-bar-row__fill" style={{ width: `${(r.calls / max) * 100}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function UsageTab() {
+  const { coordinatorSession } = useAuth();
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetchUsageSummary(coordinatorSession.volunteerId, coordinatorSession.password)
+      .then(setSummary)
+      .catch(() => setError('לא הצלחנו לטעון את נתוני השימוש ב-API.'))
+      .finally(() => setLoading(false));
+  }, [coordinatorSession]);
+
+  if (loading) return <p className="coordinator-dash__loading">טוען…</p>;
+  if (error) return <p className="coordinator-dash__error">{error}</p>;
+  if (!summary || summary.totalCalls === 0) {
+    return <p className="coordinator-dash__loading">אין עדיין נתוני שימוש ב-API בטווח הזמן הזה.</p>;
+  }
+
+  return (
+    <div className="usage-summary">
+      <div className="usage-summary__headline">
+        <strong>{summary.totalCalls}</strong> קריאות Airtable ב-{summary.distinctDays} מתוך {summary.windowDays} הימים האחרונים
+      </div>
+
+      <div className="usage-summary__section">
+        <h2 className="usage-summary__section-title">לפי מתנדב</h2>
+        <UsageBarList rows={summary.byVolunteer} />
+      </div>
+
+      <div className="usage-summary__section">
+        <h2 className="usage-summary__section-title">לפי מכשיר</h2>
+        <UsageBarList rows={summary.byDevice} />
+      </div>
+
+      <div className="usage-summary__section">
+        <h2 className="usage-summary__section-title">לפי מסך</h2>
+        <UsageBarList rows={summary.byEndpoint} />
+      </div>
+    </div>
+  );
+}
+
 export default function CoordinatorDashboardPage() {
   const [tab, setTab] = useState('participation');
 
@@ -265,9 +330,18 @@ export default function CoordinatorDashboardPage() {
         >
           דיווחי אירועים
         </button>
+        <button
+          type="button"
+          className={`coordinator-dash__tab${tab === 'usage' ? ' coordinator-dash__tab--active' : ''}`}
+          onClick={() => setTab('usage')}
+        >
+          שימוש ב-API
+        </button>
       </div>
 
-      {tab === 'participation' ? <ParticipationTab /> : <EventsTab />}
+      {tab === 'participation' && <ParticipationTab />}
+      {tab === 'events' && <EventsTab />}
+      {tab === 'usage' && <UsageTab />}
     </div>
   );
 }

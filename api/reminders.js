@@ -1,4 +1,5 @@
 import { listRecords } from './_lib/airtable.js';
+import { wrapHandler } from './_lib/usage-tracker.js';
 import {
   TABLES,
   PATROL_FIELDS,
@@ -18,7 +19,7 @@ function tomorrowDateString() {
   return `${year}-${month}-${day}`;
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -31,6 +32,8 @@ export default async function handler(req, res) {
   }
 
   const tomorrow = tomorrowDateString();
+
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
 
   try {
     const patrols = await listRecords(TABLES.PATROLS, {
@@ -84,3 +87,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to load reminders' });
   }
 }
+
+export default wrapHandler('reminders', handler);

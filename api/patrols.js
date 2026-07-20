@@ -1,4 +1,5 @@
 import { listRecords } from './_lib/airtable.js';
+import { wrapHandler } from './_lib/usage-tracker.js';
 import {
   TABLES,
   PATROL_FIELDS,
@@ -9,7 +10,7 @@ import {
   VOLUNTEER_FIELDS,
 } from './_lib/fields.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -21,13 +22,17 @@ export default async function handler(req, res) {
     return;
   }
 
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+
   try {
     const [patrols, routes, registrations, volunteers] = await Promise.all([
       listRecords(TABLES.PATROLS, {
         filterByFormula: `AND(DATETIME_FORMAT({${PATROL_FIELDS.DATE}}, 'YYYY-MM')='${month}', NOT({${PATROL_FIELDS.STATUS}}='${PATROL_STATUS.DRAFT}'))`,
         sort: [{ field: PATROL_FIELDS.DATE, direction: 'asc' }],
       }),
-      listRecords(TABLES.PATROL_ROUTES, { fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK] }),
+      listRecords(TABLES.PATROL_ROUTES, {
+        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.DIRECTIONS_TEXT],
+      }),
       listRecords(TABLES.REGISTRATIONS, {
         filterByFormula: `{${REGISTRATION_FIELDS.STATUS}}='${REGISTRATION_STATUS.REGISTERED}'`,
         fields: [REGISTRATION_FIELDS.PATROLS, REGISTRATION_FIELDS.VOLUNTEER],
@@ -37,6 +42,7 @@ export default async function handler(req, res) {
 
     const routeNameById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.NAME] || '']));
     const routeLinkById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.LINK] || '']));
+    const routeDirectionsById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.DIRECTIONS_TEXT] || '']));
     const volunteerNameById = new Map(volunteers.map((v) => [v.id, v.fields[VOLUNTEER_FIELDS.NAME] || '']));
 
     const registrationsByPatrolId = new Map();
@@ -62,6 +68,7 @@ export default async function handler(req, res) {
         endTime: f[PATROL_FIELDS.END_TIME] || null,
         routeName: routeId ? routeNameById.get(routeId) || null : null,
         routeLink: routeId ? routeLinkById.get(routeId) || null : null,
+        routeDirections: routeId ? routeDirectionsById.get(routeId) || null : null,
         leader: f[PATROL_FIELDS.LEADER] || null,
         maxParticipants: f[PATROL_FIELDS.MAX_PARTICIPANTS] ?? null,
         spotsLeft: f[PATROL_FIELDS.SPOTS_LEFT] ?? null,
@@ -76,3 +83,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to load patrols' });
   }
 }
+
+export default wrapHandler('patrols', handler);

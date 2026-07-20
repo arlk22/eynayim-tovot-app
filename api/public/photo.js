@@ -1,11 +1,12 @@
 import { getRecord } from '../_lib/airtable.js';
+import { wrapHandler } from '../_lib/usage-tracker.js';
 import { TABLES, HADAR_REPORT_FIELDS } from '../_lib/fields.js';
 
 // Public, unauthenticated redirect to a report's current main photo.
 // Airtable attachment URLs expire after a few hours, so anything that
 // needs to keep working later (e.g. the WhatsApp handoff to the
 // municipality) must link here instead of embedding the raw Airtable URL.
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -30,3 +31,5 @@ export default async function handler(req, res) {
     res.status(404).json({ error: 'not_found' });
   }
 }
+
+export default wrapHandler('public-photo', handler);

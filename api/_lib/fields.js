@@ -14,6 +14,15 @@ export const TABLES = {
   ACTIVITY_LOG: 'Activity_Log',
   REPORT_CATEGORIES: 'Report Categories',
   REPORT_SUBCATEGORIES: 'Report Subcategories',
+  USAGE_LOG: 'API Usage Log',
+};
+
+export const USAGE_LOG_FIELDS = {
+  DATE: 'Date',
+  VOLUNTEER: 'Volunteer',
+  DEVICE: 'Device',
+  ENDPOINT: 'Endpoint',
+  CALLS: 'Airtable Calls',
 };
 
 export const VOLUNTEER_FIELDS = {
@@ -78,6 +87,7 @@ export const ROUTE_FIELDS = {
   MAP: 'מפה',
   LINK: 'קישור למסלול',
   STREETS_LIST: 'רחובות המסלול',
+  DIRECTIONS_TEXT: 'הוראות הליכה',
   ACTIVE: 'פעיל',
   SPECIAL_INSTRUCTIONS: 'הנחיות מיוחדות',
   PATROLS: 'Patrols',

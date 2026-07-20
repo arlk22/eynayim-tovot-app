@@ -1,4 +1,5 @@
 import { listRecords } from '../_lib/airtable.js';
+import { wrapHandler } from '../_lib/usage-tracker.js';
 import {
   TABLES,
   HADAR_REPORT_FIELDS,
@@ -21,11 +22,13 @@ function monthKey(dateStr) {
 // numbers, photos, or reporter identities). Location is aggregated by
 // street name only, never full address — matches the "don't let residents
 // pinpoint a specific building" requirement structurally, not just in the UI.
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
+
+  res.setHeader('Cache-Control', 'public, s-maxage=180, stale-while-revalidate=600');
 
   try {
     const [reports, categories, streets] = await Promise.all([
@@ -165,3 +168,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to load public stats' });
   }
 }
+
+export default wrapHandler('public-stats', handler);

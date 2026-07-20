@@ -1,11 +1,14 @@
 import { listRecords } from './_lib/airtable.js';
+import { wrapHandler } from './_lib/usage-tracker.js';
 import { TABLES, ANNOUNCEMENT_FIELDS } from './_lib/fields.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
+
+  res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
 
   try {
     const announcements = await listRecords(TABLES.ANNOUNCEMENTS, {
@@ -31,3 +34,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to load announcements' });
   }
 }
+
+export default wrapHandler('announcements', handler);

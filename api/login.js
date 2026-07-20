@@ -1,11 +1,12 @@
 import { listRecords, updateRecord } from './_lib/airtable.js';
+import { wrapHandler } from './_lib/usage-tracker.js';
 import { TABLES, VOLUNTEER_FIELDS, COORDINATOR_ROLES, MOKAD_ROLES } from './_lib/fields.js';
 
 function normalizePhone(phone) {
   return String(phone || '').replace(/\D/g, '');
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -57,3 +58,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'login_failed' });
   }
 }
+
+export default wrapHandler('login', handler);

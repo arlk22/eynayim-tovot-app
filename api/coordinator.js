@@ -1,4 +1,5 @@
 import { listRecords, updateRecord, createRecord } from './_lib/airtable.js';
+import { wrapHandler } from './_lib/usage-tracker.js';
 import { verifyCoordinator } from './_lib/coordinator-auth.js';
 import {
   TABLES,
@@ -9,7 +10,10 @@ import {
   EVENT_FIELDS,
   EVENT_STATUS,
   ROUTE_FIELDS,
+  USAGE_LOG_FIELDS,
 } from './_lib/fields.js';
+
+const USAGE_SUMMARY_WINDOW_DAYS = 30;
 
 function buildGoogleMapsLink(streets) {
   const points = streets.map((s) => encodeURIComponent(`${s.trim()}, חיפה`));
@@ -149,7 +153,7 @@ async function handleResolveEvent(body, res) {
 async function handleListRoutes(body, res) {
   try {
     const routes = await listRecords(TABLES.PATROL_ROUTES, {
-      fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.STREETS_LIST],
+      fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.STREETS_LIST, ROUTE_FIELDS.DIRECTIONS_TEXT],
       sort: [{ field: ROUTE_FIELDS.NAME, direction: 'asc' }],
     });
 
@@ -161,6 +165,7 @@ async function handleListRoutes(body, res) {
         name: f[ROUTE_FIELDS.NAME] || '',
         link: f[ROUTE_FIELDS.LINK] || '',
         streets: streetsRaw ? streetsRaw.split('\n').filter(Boolean) : [],
+        directionsText: f[ROUTE_FIELDS.DIRECTIONS_TEXT] || '',
       };
     });
 
@@ -171,8 +176,49 @@ async function handleListRoutes(body, res) {
   }
 }
 
+function rankedTotals(rows, key) {
+  const totals = new Map();
+  for (const row of rows) {
+    const label = row[key];
+    totals.set(label, (totals.get(label) || 0) + row[USAGE_LOG_FIELDS.CALLS]);
+  }
+  return [...totals.entries()]
+    .map(([label, calls]) => ({ label, calls }))
+    .sort((a, b) => b.calls - a.calls);
+}
+
+async function handleUsageSummary(body, res) {
+  try {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - USAGE_SUMMARY_WINDOW_DAYS);
+    const cutoffKey = cutoff.toISOString().slice(0, 10);
+
+    // Date is stored as a plain 'YYYY-MM-DD' string (not an Airtable date
+    // field), so lexicographic comparison is equivalent to chronological.
+    const records = await listRecords(TABLES.USAGE_LOG, {
+      filterByFormula: `{${USAGE_LOG_FIELDS.DATE}} > '${cutoffKey}'`,
+    });
+
+    const rows = records.map((r) => r.fields);
+    const totalCalls = rows.reduce((sum, r) => sum + (r[USAGE_LOG_FIELDS.CALLS] || 0), 0);
+    const distinctDays = new Set(rows.map((r) => r[USAGE_LOG_FIELDS.DATE])).size;
+
+    res.status(200).json({
+      windowDays: USAGE_SUMMARY_WINDOW_DAYS,
+      distinctDays,
+      totalCalls,
+      byVolunteer: rankedTotals(rows, USAGE_LOG_FIELDS.VOLUNTEER).slice(0, 10),
+      byDevice: rankedTotals(rows, USAGE_LOG_FIELDS.DEVICE).slice(0, 10),
+      byEndpoint: rankedTotals(rows, USAGE_LOG_FIELDS.ENDPOINT).slice(0, 10),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load usage summary' });
+  }
+}
+
 async function handleSaveRoute(body, res) {
-  const { routeId, name, streets, customLink } = body;
+  const { routeId, name, streets, customLink, directionsText } = body;
   if (!name || !Array.isArray(streets) || streets.length < 2) {
     res.status(400).json({ error: 'invalid_route' });
     return;
@@ -188,6 +234,7 @@ async function handleSaveRoute(body, res) {
       [ROUTE_FIELDS.NAME]: name,
       [ROUTE_FIELDS.STREETS_LIST]: streets.join('\n'),
       [ROUTE_FIELDS.LINK]: link,
+      [ROUTE_FIELDS.DIRECTIONS_TEXT]: directionsText || '',
     };
 
     let record;
@@ -197,14 +244,14 @@ async function handleSaveRoute(body, res) {
       record = await createRecord(TABLES.PATROL_ROUTES, fields);
     }
 
-    res.status(200).json({ ok: true, route: { id: record.id, name, streets, link } });
+    res.status(200).json({ ok: true, route: { id: record.id, name, streets, link, directionsText: directionsText || '' } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'save_failed' });
   }
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -240,7 +287,12 @@ export default async function handler(req, res) {
     case 'save-route':
       await handleSaveRoute(body, res);
       return;
+    case 'usage-summary':
+      await handleUsageSummary(body, res);
+      return;
     default:
       res.status(400).json({ error: 'unknown_action' });
   }
 }
+
+export default wrapHandler('coordinator', handler);
