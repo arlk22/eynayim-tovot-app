@@ -198,6 +198,12 @@ export default function PatrolSignupPage() {
                     )}
                   </p>
                 )}
+                {p.routeDirections && (
+                  <details className="patrol-card__directions" onClick={(e) => e.stopPropagation()}>
+                    <summary>📋 הוראות הליכה</summary>
+                    <pre>{p.routeDirections}</pre>
+                  </details>
+                )}
                 {p.leader && <p className="patrol-card__leader">מוביל: {p.leader}</p>}
 
                 <p className="patrol-card__count">

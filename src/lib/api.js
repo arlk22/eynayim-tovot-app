@@ -145,6 +145,13 @@ export function resolveEvent(volunteerId, password, eventId) {
   });
 }
 
+export function fetchTomorrowRegistrations(volunteerId, password) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'tomorrow-registrations', volunteerId, password }),
+  });
+}
+
 export function fetchRoutes(volunteerId, password) {
   return request('/api/coordinator', {
     method: 'POST',

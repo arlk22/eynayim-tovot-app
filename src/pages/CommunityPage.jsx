@@ -35,15 +35,11 @@ export default function CommunityPage() {
       </span>
       <h1 className="community-page__title">עיניים טובות – קהילת הדר</h1>
       <p className="community-page__intro">
-        מתנדבים תושבי השכונה יוצאים לסיורים קבועים, שומרים עין על הרחובות, ומדווחים על
-        מפגעים כדי לשמור על הדר מקום נעים וטוב יותר לחיות בו. הנתונים כאן מתעדכנים
-        אוטומטית ומשקפים את הפעילות בפועל.
+        מתנדבי "עיניים טובות", תושבי השכונה, יוצאים לסיורים קבועים, מקימים נוכחות ברחובות,
+        אוספים ומדווחים על מפגעים. הפעילות נועדה על מנת לשמור על שכונת הדר כמקום נעים שטוב
+        יותר לחיות בו.
       </p>
-
-      {loading && <p className="community-page__loading">טוען נתונים…</p>}
-      {error && <p className="community-page__error">{error}</p>}
-
-      <HazardStatsCharts stats={stats} />
+      <p className="community-page__intro">הנתונים שלפניכם, מתעדכנים ומשקפים את הפעילות בפועל.</p>
 
       <section className="community-page__cta">
         <a href={VOLUNTEER_SIGNUP_URL} target="_blank" rel="noopener noreferrer" className="community-page__cta-btn">
@@ -53,6 +49,11 @@ export default function CommunityPage() {
           🟡 דווחו על מפגע
         </a>
       </section>
+
+      {loading && <p className="community-page__loading">טוען נתונים…</p>}
+      {error && <p className="community-page__error">{error}</p>}
+
+      <HazardStatsCharts stats={stats} />
     </div>
   );
 }

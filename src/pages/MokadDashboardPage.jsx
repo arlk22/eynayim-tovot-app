@@ -3,7 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { fetchMokadReports, fetchMunicipalityFollowups, setMunicipalityResponse } from '../lib/api';
 import MokadReportDetail from './MokadReportDetail';
 import HazardMap from '../components/HazardMap';
+import Pagination from '../components/Pagination';
 import './MokadDashboardPage.css';
+
+const PAGE_SIZE = 30;
 
 const STATUS_FILTERS = ['הכל', 'חדש', 'אומת', 'בטיפול', 'נסגר'];
 
@@ -70,6 +73,7 @@ export default function MokadDashboardPage() {
   const [sortDir, setSortDir] = useState('asc');
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [view, setView] = useState('reports');
+  const [page, setPage] = useState(1);
   const [followups, setFollowups] = useState([]);
   const [followupsLoading, setFollowupsLoading] = useState(true);
   const [followupsError, setFollowupsError] = useState(null);
@@ -96,6 +100,10 @@ export default function MokadDashboardPage() {
     load();
     loadFollowups();
   }, [load, loadFollowups]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, segment, categoryFilter, subcategoryFilter, streetFilter]);
 
   async function handleUpdateResponse(logEntryId, status) {
     if (!status) return;
@@ -180,6 +188,9 @@ export default function MokadDashboardPage() {
         return sortDir === 'asc' ? cmp : -cmp;
       })
     : filtered;
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const hasActiveFilters = statusFilter !== 'הכל' || segment || categoryFilter || subcategoryFilter || streetFilter;
 
@@ -371,7 +382,7 @@ export default function MokadDashboardPage() {
         {!loading && !error && sorted.length > 0 && (
           <>
             <div className="mokad-dash__list">
-              {sorted.map((r) => (
+              {paginated.map((r) => (
                 <div
                   key={r.id}
                   className="report-card"
@@ -419,7 +430,7 @@ export default function MokadDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sorted.map((r) => (
+                  {paginated.map((r) => (
                     <tr key={r.id} onClick={() => setSelectedReportId(r.id)}>
                       <td>{r.category}</td>
                       <td>{r.subcategory}</td>
@@ -440,6 +451,8 @@ export default function MokadDashboardPage() {
                 </tbody>
               </table>
             </div>
+
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </>
         )}
         </>

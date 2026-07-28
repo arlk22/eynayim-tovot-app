@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchRoutes, saveRoute } from '../lib/api';
 import './RoutesBuilderPage.css';
 
-const EMPTY_FORM = { routeId: null, name: '', streets: ['', ''], customLink: '' };
+const EMPTY_FORM = { routeId: null, name: '', streets: ['', ''], customLink: '', directionsText: '' };
 
 function buildAutoLink(streets) {
   const clean = streets.map((s) => s.trim()).filter(Boolean);
@@ -64,7 +64,7 @@ export default function RoutesBuilderPage() {
     // A saved link that differs from what the streets alone would generate means
     // it was manually corrected in Google Maps (e.g. by dragging the route line) — preserve it.
     const customLink = route.link && route.link !== autoLink ? route.link : '';
-    setForm({ routeId: route.id, name: route.name, streets, customLink });
+    setForm({ routeId: route.id, name: route.name, streets, customLink, directionsText: route.directionsText || '' });
     setError(null);
   }
 
@@ -94,6 +94,7 @@ export default function RoutesBuilderPage() {
         name: form.name.trim(),
         streets: cleanStreets,
         customLink: customLink || undefined,
+        directionsText: form.directionsText.trim() || undefined,
       });
       newRoute();
       await load();
@@ -198,6 +199,22 @@ export default function RoutesBuilderPage() {
           לחצו על "אפשרויות" ← "העתקת הקישור", והדביקו אותו כאן. הקישור הזה יישמר במקום זה שנוצר אוטומטית מרשימת הרחובות.
         </p>
 
+        <label className="routes-builder__label">
+          הוראות הליכה בטקסט (אופציונלי)
+          <textarea
+            className="routes-builder__textarea"
+            value={form.directionsText}
+            onChange={(e) => setForm((f) => ({ ...f, directionsText: e.target.value }))}
+            placeholder={'לדוגמה:\nכיכר מסריק\nלכו אל הנביאים\nפנו ימינה אל יונה\n...'}
+            rows={6}
+          />
+        </label>
+        <p className="routes-builder__tip">
+          💡 בגוגל מפות, בפאנל ההוראות בצד (לחיצה על "פרטים") מופיע בדיוק הטקסט הזה — עם שמות רחובות ו"פנו
+          ימינה/שמאלה" בכל צומת. פשוט מעתיקים אותו משם ומדביקים כאן, כדי שהמתנדבים יראו הוראות הליכה מדויקות בלי
+          לצאת מהאפליקציה.
+        </p>
+
         {error && <p className="routes-builder__error">{error}</p>}
 
         <div className="routes-builder__form-actions">
@@ -229,6 +246,12 @@ export default function RoutesBuilderPage() {
               <a href={r.link} target="_blank" rel="noopener noreferrer" className="route-card__link">
                 🔗 פתיחה בגוגל מפות
               </a>
+            )}
+            {r.directionsText && (
+              <details className="route-card__directions">
+                <summary>📋 הוראות הליכה</summary>
+                <pre>{r.directionsText}</pre>
+              </details>
             )}
           </div>
         ))}

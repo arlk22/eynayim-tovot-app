@@ -20,6 +20,17 @@ function buildGoogleMapsLink(streets) {
   return `https://www.google.com/maps/dir/${points.join('/')}`;
 }
 
+function tomorrowDateString() {
+  // Local date parts, not toISOString (UTC) — avoids an off-by-one shift
+  // depending on server timezone/time of day. Same approach as reminders.js.
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // Single consolidated endpoint for all coordinator actions (Vercel Hobby caps
 // serverless functions at 12; this used to be 5 separate files).
 async function handleParticipation(body, res) {
@@ -147,6 +158,74 @@ async function handleResolveEvent(body, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'resolve_failed' });
+  }
+}
+
+async function handleTomorrowRegistrations(body, res) {
+  const tomorrow = tomorrowDateString();
+
+  try {
+    const patrols = await listRecords(TABLES.PATROLS, {
+      filterByFormula: `IS_SAME({${PATROL_FIELDS.DATE}}, '${tomorrow}', 'day')`,
+    });
+
+    if (patrols.length === 0) {
+      res.status(200).json({ patrols: [] });
+      return;
+    }
+
+    const patrolIds = new Set(patrols.map((p) => p.id));
+
+    // Same JS-side matching as elsewhere in this codebase — ARRAYJOIN on a
+    // link field resolves to the linked record's primary-field text, not
+    // its ID, so FIND/ARRAYJOIN can't filter by record ID in a formula.
+    const [registrations, volunteers, routes] = await Promise.all([
+      listRecords(TABLES.REGISTRATIONS, {
+        filterByFormula: `{${REGISTRATION_FIELDS.STATUS}}='${REGISTRATION_STATUS.REGISTERED}'`,
+      }),
+      listRecords(TABLES.VOLUNTEERS, {
+        fields: [VOLUNTEER_FIELDS.NAME, VOLUNTEER_FIELDS.PHONE],
+      }),
+      listRecords(TABLES.PATROL_ROUTES, { fields: [ROUTE_FIELDS.NAME] }),
+    ]);
+
+    const volunteerById = new Map(volunteers.map((v) => [v.id, v.fields]));
+    const routeNameById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.NAME] || '']));
+
+    const result = patrols
+      .filter((p) => patrolIds.has(p.id))
+      .map((p) => {
+        const f = p.fields;
+        const routeId = f[PATROL_FIELDS.ROUTE]?.[0];
+        const registrants = registrations
+          .filter((r) => (r.fields[REGISTRATION_FIELDS.PATROLS] || []).includes(p.id))
+          .map((r) => {
+            const volId = r.fields[REGISTRATION_FIELDS.VOLUNTEER]?.[0];
+            const vf = volId ? volunteerById.get(volId) : null;
+            return volId
+              ? {
+                  id: volId,
+                  name: vf?.[VOLUNTEER_FIELDS.NAME] || '',
+                  phone: vf?.[VOLUNTEER_FIELDS.PHONE] || '',
+                }
+              : null;
+          })
+          .filter(Boolean);
+
+        return {
+          id: p.id,
+          date: f[PATROL_FIELDS.DATE] || null,
+          startTime: f[PATROL_FIELDS.START_TIME] || null,
+          routeName: routeId ? routeNameById.get(routeId) || null : null,
+          registrants,
+        };
+      })
+      .filter((p) => p.registrants.length > 0);
+
+    res.status(200).json({ patrols: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load tomorrow registrations' });
   }
 }
 
@@ -280,6 +359,9 @@ async function handler(req, res) {
       return;
     case 'resolve-event':
       await handleResolveEvent(body, res);
+      return;
+    case 'tomorrow-registrations':
+      await handleTomorrowRegistrations(body, res);
       return;
     case 'list-routes':
       await handleListRoutes(body, res);

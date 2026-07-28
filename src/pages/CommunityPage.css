@@ -53,3 +53,32 @@
   color: var(--color-text);
   box-shadow: var(--shadow-card);
 }
+
+@media (min-width: 1024px) {
+  .community-page {
+    max-width: 880px;
+    padding: var(--space-7) var(--space-6);
+  }
+
+  .community-page__icon {
+    font-size: 56px;
+  }
+
+  .community-page__title {
+    font-size: 26px;
+  }
+
+  .community-page__intro {
+    font-size: 15px;
+    max-width: 640px;
+  }
+
+  .community-page__cta {
+    flex-direction: row;
+    max-width: 480px;
+  }
+
+  .community-page__cta-btn {
+    flex: 1;
+  }
+}

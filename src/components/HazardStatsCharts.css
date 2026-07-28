@@ -109,3 +109,14 @@
   color: var(--color-text-faint);
   font-weight: 700;
 }
+
+@media (min-width: 1024px) {
+  .stats-block__bar-row {
+    grid-template-columns: 160px 1fr 40px;
+    font-size: 13px;
+  }
+
+  .stats-block__section h2 {
+    font-size: 17px;
+  }
+}

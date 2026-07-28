@@ -6,6 +6,7 @@ import {
   fetchCoordinatorEvents,
   resolveEvent,
   fetchUsageSummary,
+  fetchTomorrowRegistrations,
 } from '../lib/api';
 import './CoordinatorDashboardPage.css';
 
@@ -244,6 +245,88 @@ function EventsTab() {
   );
 }
 
+function formatPatrolDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+}
+
+function reminderWhatsAppLink(name, phone, dateStr, startTime) {
+  const link = whatsAppLink(phone);
+  if (!link) return null;
+  const message = `הי ${name}, תזכורת לסיור בתאריך ${formatPatrolDate(dateStr)} בשעה ${startTime || ''}`;
+  return `${link}?text=${encodeURIComponent(message)}`;
+}
+
+function RemindersTab() {
+  const { coordinatorSession } = useAuth();
+  const [patrols, setPatrols] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    fetchTomorrowRegistrations(coordinatorSession.volunteerId, coordinatorSession.password)
+      .then((data) => setPatrols(data.patrols))
+      .catch(() => setError('לא הצלחנו לטעון את הנרשמים למחר.'))
+      .finally(() => setLoading(false));
+  }, [coordinatorSession]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return (
+    <div>
+      <p className="coordinator-dash__hint">תזכורות לסיורי מחר — שולחים אחד-אחד בלחיצה על שם המתנדב.</p>
+
+      {loading && <p className="coordinator-dash__loading">טוען…</p>}
+      {error && <p className="coordinator-dash__error">{error}</p>}
+
+      {!loading && !error && patrols.length === 0 && (
+        <p className="coordinator-dash__loading">אין סיורים עם נרשמים מחר.</p>
+      )}
+
+      {!loading && !error && (
+        <div className="coordinator-dash__list">
+          {patrols.map((p) => (
+            <div key={p.id} className="reminder-patrol">
+              <div className="reminder-patrol__header">
+                <strong>
+                  {formatPatrolDate(p.date)}, {p.startTime}
+                </strong>
+                {p.routeName && <span>{p.routeName}</span>}
+              </div>
+              <div className="reminder-patrol__registrants">
+                {p.registrants.map((r) => {
+                  const link = reminderWhatsAppLink(r.name, r.phone, p.date, p.startTime);
+                  return (
+                    <div key={r.id} className="reminder-row">
+                      <span className="reminder-row__name">{r.name}</span>
+                      {link ? (
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="reminder-row__send"
+                        >
+                          💬 שלח תזכורת
+                        </a>
+                      ) : (
+                        <span className="reminder-row__no-phone">אין מספר טלפון</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function UsageBarList({ rows }) {
   const max = Math.max(1, ...rows.map((r) => r.calls));
   return (
@@ -332,6 +415,13 @@ export default function CoordinatorDashboardPage() {
         </button>
         <button
           type="button"
+          className={`coordinator-dash__tab${tab === 'reminders' ? ' coordinator-dash__tab--active' : ''}`}
+          onClick={() => setTab('reminders')}
+        >
+          תזכורות סיור
+        </button>
+        <button
+          type="button"
           className={`coordinator-dash__tab${tab === 'usage' ? ' coordinator-dash__tab--active' : ''}`}
           onClick={() => setTab('usage')}
         >
@@ -341,6 +431,7 @@ export default function CoordinatorDashboardPage() {
 
       {tab === 'participation' && <ParticipationTab />}
       {tab === 'events' && <EventsTab />}
+      {tab === 'reminders' && <RemindersTab />}
       {tab === 'usage' && <UsageTab />}
     </div>
   );

@@ -134,6 +134,24 @@
   text-decoration: none;
 }
 
+.patrol-card__directions {
+  font-size: 13px;
+}
+
+.patrol-card__directions summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.patrol-card__directions pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  color: var(--color-text-muted);
+  margin: var(--space-2) 0 0;
+  line-height: 1.6;
+}
+
 .patrol-card__encourage {
   font-size: 13px;
   font-weight: 600;
