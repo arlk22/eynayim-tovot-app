@@ -11,10 +11,64 @@ import {
   savePatrol,
   deletePatrol,
   fetchRoutes,
+  fetchReportCategories,
+  buildManheletReport,
+  saveManheletReportLog,
+  fetchManheletReportLog,
+  updateManheletReportLog,
 } from '../lib/api';
 import './CoordinatorDashboardPage.css';
 
 const PATROL_STATUS_OPTIONS = ['פתוח', 'מלא', 'הסתיים', 'בוטל', 'טיוטה'];
+const REPORT_STATUS_OPTIONS = ['חדש', 'אומת', 'בטיפול', 'נסגר'];
+
+const REPORT_CSV_COLUMNS = [
+  { key: 'reportNumber', label: 'מזהה' },
+  { key: 'category', label: 'קטגוריה' },
+  { key: 'subcategory', label: 'תת קטגוריה' },
+  { key: 'address', label: 'כתובת' },
+  { key: 'description', label: 'תיאור' },
+  { key: 'status', label: 'סטטוס' },
+  { key: 'urgency', label: 'דחיפות' },
+  { key: 'daysSinceReport', label: 'ימים מאז דיווח' },
+  { key: 'trackingNumber106', label: 'מספר מעקב 106' },
+  { key: 'photoLink', label: 'קישור לתמונה' },
+];
+
+function csvEscape(value) {
+  const s = String(value ?? '');
+  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function reportsToCsv(rows) {
+  const header = REPORT_CSV_COLUMNS.map((c) => csvEscape(c.label)).join(',');
+  const lines = rows.map((r) => REPORT_CSV_COLUMNS.map((c) => csvEscape(r[c.key])).join(','));
+  // Leading BOM so Excel detects UTF-8 and renders the Hebrew correctly.
+  return '﻿' + [header, ...lines].join('\r\n');
+}
+
+function downloadCsv(csvContent, filename) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function buildCriteriaSummary({ categoryNames, statuses, dateFrom, dateTo, maxCount, minDaysSince }) {
+  const parts = [];
+  if (categoryNames.length > 0) parts.push(`קטגוריות: ${categoryNames.join(', ')}`);
+  if (statuses.length > 0) parts.push(`סטטוס: ${statuses.join(', ')}`);
+  if (dateFrom || dateTo) parts.push(`טווח תאריכים: ${dateFrom || '—'} עד ${dateTo || '—'}`);
+  if (maxCount) parts.push(`מקסימום מפגעים: ${maxCount}`);
+  if (minDaysSince) parts.push(`מינימום ימים מאז דיווח: ${minDaysSince}`);
+  return parts.length > 0 ? parts.join(' | ') : 'ללא סינון';
+}
 
 const MONTH_NAMES = [
   'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
@@ -636,6 +690,318 @@ function ScheduleTab() {
   );
 }
 
+function ManheletReportTab() {
+  const { coordinatorSession } = useAuth();
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [maxCount, setMaxCount] = useState('');
+  const [minDaysSince, setMinDaysSince] = useState('');
+  const [previewRows, setPreviewRows] = useState(null);
+  const [totalMatched, setTotalMatched] = useState(0);
+  const [building, setBuilding] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [logs, setLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(true);
+  const [deliveryDrafts, setDeliveryDrafts] = useState({});
+  const [savingLogId, setSavingLogId] = useState(null);
+
+  useEffect(() => {
+    fetchReportCategories(coordinatorSession.volunteerId, coordinatorSession.password)
+      .then((data) => setCategories(data.categories))
+      .catch(() => setCategories([]));
+  }, [coordinatorSession]);
+
+  const loadLogs = useCallback(() => {
+    setLogsLoading(true);
+    fetchManheletReportLog(coordinatorSession.volunteerId, coordinatorSession.password)
+      .then((data) => setLogs(data.logs))
+      .catch(() => setLogs([]))
+      .finally(() => setLogsLoading(false));
+  }, [coordinatorSession]);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
+
+  function toggleCategory(id) {
+    setSelectedCategoryIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+  }
+
+  function toggleStatus(s) {
+    setSelectedStatuses((arr) => (arr.includes(s) ? arr.filter((x) => x !== s) : [...arr, s]));
+  }
+
+  async function handleBuild() {
+    setBuilding(true);
+    setError(null);
+    try {
+      const data = await buildManheletReport(coordinatorSession.volunteerId, coordinatorSession.password, {
+        categoryIds: selectedCategoryIds,
+        statuses: selectedStatuses,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        maxCount: maxCount || undefined,
+        minDaysSince: minDaysSince || undefined,
+      });
+      setPreviewRows(data.reports);
+      setTotalMatched(data.totalMatched);
+    } catch {
+      setError('הפקת התצוגה המקדימה נכשלה, נסו שוב.');
+    } finally {
+      setBuilding(false);
+    }
+  }
+
+  function removeRow(id) {
+    setPreviewRows((rows) => rows.filter((r) => r.id !== id));
+  }
+
+  async function handleExport() {
+    if (!previewRows || previewRows.length === 0 || exporting) return;
+    setExporting(true);
+    setError(null);
+    try {
+      const origin = window.location.origin;
+      const csvRows = previewRows.map((r) => ({
+        ...r,
+        photoLink: r.hasPhoto ? `${origin}/api/public/photo?id=${r.id}` : '',
+      }));
+      const filenameDate = new Date().toISOString().slice(0, 10);
+      downloadCsv(reportsToCsv(csvRows), `דוח-מנהלת-הדר-${filenameDate}.csv`);
+
+      const categoryNames = categories.filter((c) => selectedCategoryIds.includes(c.id)).map((c) => c.name);
+      const criteria = buildCriteriaSummary({
+        categoryNames,
+        statuses: selectedStatuses,
+        dateFrom,
+        dateTo,
+        maxCount,
+        minDaysSince,
+      });
+      await saveManheletReportLog(coordinatorSession.volunteerId, coordinatorSession.password, previewRows.length, criteria);
+      loadLogs();
+    } catch {
+      setError('שמירת רישום ההפקה נכשלה (הקובץ בכל זאת ירד).');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  function setDraft(logId, field, value) {
+    setDeliveryDrafts((d) => ({ ...d, [logId]: { ...d[logId], [field]: value } }));
+  }
+
+  async function handleSaveDelivery(log) {
+    const draft = deliveryDrafts[log.id] || {};
+    const deliveredAt = draft.deliveredAt ?? log.deliveredAt ?? '';
+    const deliveredTo = draft.deliveredTo ?? log.deliveredTo ?? '';
+    setSavingLogId(log.id);
+    try {
+      await updateManheletReportLog(coordinatorSession.volunteerId, coordinatorSession.password, log.id, deliveredAt, deliveredTo);
+      await loadLogs();
+    } catch {
+      setError('שמירת פרטי המסירה נכשלה, נסו שוב.');
+    } finally {
+      setSavingLogId(null);
+    }
+  }
+
+  return (
+    <div>
+      <div className="manhelet-report__form">
+        <h2 className="manhelet-report__form-title">בניית דוח</h2>
+
+        <div className="manhelet-report__field">
+          <strong>קטגוריות (השאירו ריק = הכל)</strong>
+          <div className="manhelet-report__checkbox-list">
+            {categories.map((c) => (
+              <label key={c.id} className="manhelet-report__checkbox">
+                <input
+                  type="checkbox"
+                  checked={selectedCategoryIds.includes(c.id)}
+                  onChange={() => toggleCategory(c.id)}
+                />
+                {c.name}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="manhelet-report__field">
+          <strong>סטטוס (השאירו ריק = הכל)</strong>
+          <div className="manhelet-report__checkbox-list manhelet-report__checkbox-list--inline">
+            {REPORT_STATUS_OPTIONS.map((s) => (
+              <label key={s} className="manhelet-report__checkbox">
+                <input type="checkbox" checked={selectedStatuses.includes(s)} onChange={() => toggleStatus(s)} />
+                {s}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="manhelet-report__row">
+          <label className="manhelet-report__label">
+            מתאריך
+            <input
+              type="date"
+              className="manhelet-report__input"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+          </label>
+          <label className="manhelet-report__label">
+            עד תאריך
+            <input
+              type="date"
+              className="manhelet-report__input"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+          </label>
+        </div>
+
+        <div className="manhelet-report__row">
+          <label className="manhelet-report__label">
+            מקסימום מפגעים (אופציונלי)
+            <input
+              type="number"
+              min="1"
+              className="manhelet-report__input"
+              value={maxCount}
+              onChange={(e) => setMaxCount(e.target.value)}
+              placeholder="לדוגמה: 20"
+            />
+          </label>
+          <label className="manhelet-report__label">
+            ימים מאז דיווח, מינימום (אופציונלי)
+            <input
+              type="number"
+              min="0"
+              className="manhelet-report__input"
+              value={minDaysSince}
+              onChange={(e) => setMinDaysSince(e.target.value)}
+              placeholder="לדוגמה: 7"
+            />
+          </label>
+        </div>
+        <p className="manhelet-report__hint">
+          אפשר להגביל לפי מספר מקסימלי, לפי טווח תאריכים, או שניהם יחד — לפי מה שנוח לקצב המפגשים עם המנהלת.
+        </p>
+
+        <button type="button" className="manhelet-report__build-btn" onClick={handleBuild} disabled={building}>
+          {building ? 'מפיק…' : 'הפק תצוגה מקדימה'}
+        </button>
+
+        {error && <p className="coordinator-dash__error">{error}</p>}
+      </div>
+
+      {previewRows && (
+        <div className="manhelet-report__preview">
+          <div className="manhelet-report__preview-header">
+            <strong>
+              {previewRows.length} מפגעים בדוח
+              {totalMatched !== previewRows.length ? ` (מתוך ${totalMatched} שתאמו לסינון)` : ''}
+            </strong>
+            <button
+              type="button"
+              className="manhelet-report__export-btn"
+              onClick={handleExport}
+              disabled={previewRows.length === 0 || exporting}
+            >
+              {exporting ? 'מייצא…' : '📥 ייצוא לאקסל (CSV)'}
+            </button>
+          </div>
+
+          {previewRows.length === 0 && <p className="coordinator-dash__loading">כל השורות הוסרו מהדוח.</p>}
+
+          <div className="manhelet-report__rows">
+            {previewRows.map((r) => (
+              <div key={r.id} className="manhelet-report__row-card">
+                <div className="manhelet-report__row-header">
+                  <strong>
+                    #{r.reportNumber} · {r.category}
+                    {r.subcategory ? ` — ${r.subcategory}` : ''}
+                  </strong>
+                  <button
+                    type="button"
+                    className="manhelet-report__remove-btn"
+                    onClick={() => removeRow(r.id)}
+                    aria-label="הסר מהדוח"
+                  >
+                    ✕ הסר מהדוח
+                  </button>
+                </div>
+                <p className="manhelet-report__row-field">{r.address}</p>
+                {r.description && <p className="manhelet-report__row-field">{r.description}</p>}
+                <p className="manhelet-report__row-field">
+                  סטטוס: {r.status} · דחיפות: {r.urgency || '—'} · {r.daysSinceReport ?? '—'} ימים מאז דיווח
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <h2 className="manhelet-report__history-title">היסטוריית דוחות</h2>
+      {logsLoading && <p className="coordinator-dash__loading">טוען…</p>}
+      {!logsLoading && logs.length === 0 && <p className="coordinator-dash__loading">עדיין לא הופק אף דוח.</p>}
+      {!logsLoading && logs.length > 0 && (
+        <div className="coordinator-dash__list">
+          {logs.map((l) => {
+            const draft = deliveryDrafts[l.id] || {};
+            const deliveredAt = draft.deliveredAt ?? l.deliveredAt ?? '';
+            const deliveredTo = draft.deliveredTo ?? l.deliveredTo ?? '';
+            const dirty = deliveredAt !== (l.deliveredAt || '') || deliveredTo !== (l.deliveredTo || '');
+            return (
+              <div key={l.id} className="manhelet-report__log-card">
+                <div className="manhelet-report__row-header">
+                  <strong>הופק {l.generatedAt} · {l.count} מפגעים</strong>
+                  <span className="manhelet-report__log-producer">{l.producerName}</span>
+                </div>
+                {l.criteria && <p className="manhelet-report__row-field">{l.criteria}</p>}
+                <div className="manhelet-report__row">
+                  <label className="manhelet-report__label">
+                    תאריך מסירה
+                    <input
+                      type="date"
+                      className="manhelet-report__input"
+                      value={deliveredAt}
+                      onChange={(e) => setDraft(l.id, 'deliveredAt', e.target.value)}
+                    />
+                  </label>
+                  <label className="manhelet-report__label">
+                    למי נמסר
+                    <input
+                      type="text"
+                      className="manhelet-report__input"
+                      value={deliveredTo}
+                      onChange={(e) => setDraft(l.id, 'deliveredTo', e.target.value)}
+                      placeholder="לדוגמה: שם איש קשר במנהלת"
+                    />
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  className="manhelet-report__save-delivery-btn"
+                  onClick={() => handleSaveDelivery(l)}
+                  disabled={!dirty || savingLogId === l.id}
+                >
+                  {savingLogId === l.id ? 'שומר…' : 'שמירת פרטי מסירה'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function UsageBarList({ rows }) {
   const max = Math.max(1, ...rows.map((r) => r.calls));
   return (
@@ -743,6 +1109,13 @@ export default function CoordinatorDashboardPage() {
         >
           שימוש ב-API
         </button>
+        <button
+          type="button"
+          className={`coordinator-dash__tab${tab === 'manhelet' ? ' coordinator-dash__tab--active' : ''}`}
+          onClick={() => setTab('manhelet')}
+        >
+          דוח למנהלת הדר
+        </button>
       </div>
 
       {tab === 'schedule' && <ScheduleTab />}
@@ -750,6 +1123,7 @@ export default function CoordinatorDashboardPage() {
       {tab === 'events' && <EventsTab />}
       {tab === 'reminders' && <RemindersTab />}
       {tab === 'usage' && <UsageTab />}
+      {tab === 'manhelet' && <ManheletReportTab />}
     </div>
   );
 }

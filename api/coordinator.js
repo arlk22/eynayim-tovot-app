@@ -14,6 +14,9 @@ import {
   ROUTE_FIELDS,
   USAGE_LOG_FIELDS,
   STREET_FIELDS,
+  HADAR_REPORT_FIELDS,
+  REPORT_CATEGORY_FIELDS,
+  MANHELET_REPORT_FIELDS,
 } from './_lib/fields.js';
 
 const USAGE_SUMMARY_WINDOW_DAYS = 30;
@@ -555,6 +558,154 @@ async function handleDeletePatrol(body, res) {
   }
 }
 
+function reportDaysSince(dateStr) {
+  if (!dateStr) return null;
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+async function handleListReportCategories(body, res) {
+  try {
+    const categories = await listRecords(TABLES.REPORT_CATEGORIES, {
+      fields: [REPORT_CATEGORY_FIELDS.NAME],
+      sort: [{ field: REPORT_CATEGORY_FIELDS.NAME, direction: 'asc' }],
+    });
+    res.status(200).json({
+      categories: categories.map((c) => ({ id: c.id, name: c.fields[REPORT_CATEGORY_FIELDS.NAME] || '' })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load categories' });
+  }
+}
+
+async function handleBuildManheletReport(body, res) {
+  const { categoryIds, statuses, dateFrom, dateTo, maxCount, minDaysSince } = body;
+
+  try {
+    const [reports, categories] = await Promise.all([
+      listRecords(TABLES.HADAR_NEW_REPORT, {
+        sort: [{ field: HADAR_REPORT_FIELDS.REPORTED_AT, direction: 'desc' }],
+        cacheTtlMs: 0,
+      }),
+      listRecords(TABLES.REPORT_CATEGORIES, { fields: [REPORT_CATEGORY_FIELDS.NAME] }),
+    ]);
+
+    const categoryNameById = new Map(categories.map((c) => [c.id, c.fields[REPORT_CATEGORY_FIELDS.NAME] || '']));
+    const categoryIdSet = Array.isArray(categoryIds) && categoryIds.length > 0 ? new Set(categoryIds) : null;
+    const statusSet = Array.isArray(statuses) && statuses.length > 0 ? new Set(statuses) : null;
+
+    let result = reports.map((r) => {
+      const f = r.fields;
+      const categoryId = f[HADAR_REPORT_FIELDS.CATEGORY]?.[0] || null;
+      const reportedAt = f[HADAR_REPORT_FIELDS.REPORTED_AT] || null;
+      return {
+        id: r.id,
+        categoryId,
+        reportNumber: f[HADAR_REPORT_FIELDS.ID] ?? null,
+        category: categoryId ? categoryNameById.get(categoryId) || '' : '',
+        subcategory: f[HADAR_REPORT_FIELDS.SUBCATEGORY_DISPLAY] || '',
+        address: f[HADAR_REPORT_FIELDS.MAP_ADDRESS] || '',
+        description: f[HADAR_REPORT_FIELDS.DESCRIPTION] || '',
+        status: f[HADAR_REPORT_FIELDS.STATUS] || '',
+        urgency: f[HADAR_REPORT_FIELDS.URGENCY] || '',
+        reportedAt,
+        daysSinceReport: reportDaysSince(reportedAt),
+        trackingNumber106: f[HADAR_REPORT_FIELDS.TRACKING_NUMBER_106] || '',
+        hasPhoto: !!f[HADAR_REPORT_FIELDS.MAIN_PHOTO]?.[0],
+      };
+    });
+
+    if (categoryIdSet) result = result.filter((r) => r.categoryId && categoryIdSet.has(r.categoryId));
+    if (statusSet) result = result.filter((r) => statusSet.has(r.status));
+    if (dateFrom) result = result.filter((r) => r.reportedAt && r.reportedAt.slice(0, 10) >= dateFrom);
+    if (dateTo) result = result.filter((r) => r.reportedAt && r.reportedAt.slice(0, 10) <= dateTo);
+    if (minDaysSince != null && minDaysSince !== '') {
+      const threshold = Number(minDaysSince);
+      result = result.filter((r) => r.daysSinceReport !== null && r.daysSinceReport >= threshold);
+    }
+
+    const totalMatched = result.length;
+    if (maxCount != null && maxCount !== '') {
+      const cap = Number(maxCount);
+      if (cap > 0) result = result.slice(0, cap);
+    }
+
+    res.status(200).json({ reports: result, totalMatched });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to build report' });
+  }
+}
+
+async function handleSaveManheletReportLog(coordinator, body, res) {
+  const { count, criteria } = body;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const record = await createRecord(TABLES.MANHELET_REPORTS, {
+      [MANHELET_REPORT_FIELDS.TITLE]: `דוח ${today}`,
+      [MANHELET_REPORT_FIELDS.GENERATED_AT]: today,
+      [MANHELET_REPORT_FIELDS.PRODUCER]: [coordinator.id],
+      [MANHELET_REPORT_FIELDS.COUNT]: count ?? 0,
+      [MANHELET_REPORT_FIELDS.CRITERIA]: criteria || '',
+    });
+    res.status(200).json({ ok: true, id: record.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'save_failed' });
+  }
+}
+
+async function handleListManheletReportLog(body, res) {
+  try {
+    const [logs, volunteers] = await Promise.all([
+      listRecords(TABLES.MANHELET_REPORTS, {
+        sort: [{ field: MANHELET_REPORT_FIELDS.GENERATED_AT, direction: 'desc' }],
+        cacheTtlMs: 0,
+      }),
+      listRecords(TABLES.VOLUNTEERS, { fields: [VOLUNTEER_FIELDS.NAME] }),
+    ]);
+    const volunteerNameById = new Map(volunteers.map((v) => [v.id, v.fields[VOLUNTEER_FIELDS.NAME] || '']));
+
+    const result = logs.map((l) => {
+      const f = l.fields;
+      const producerId = f[MANHELET_REPORT_FIELDS.PRODUCER]?.[0] || null;
+      return {
+        id: l.id,
+        generatedAt: f[MANHELET_REPORT_FIELDS.GENERATED_AT] || null,
+        deliveredAt: f[MANHELET_REPORT_FIELDS.DELIVERED_AT] || null,
+        producerName: producerId ? volunteerNameById.get(producerId) || '' : '',
+        deliveredTo: f[MANHELET_REPORT_FIELDS.DELIVERED_TO] || '',
+        count: f[MANHELET_REPORT_FIELDS.COUNT] ?? null,
+        criteria: f[MANHELET_REPORT_FIELDS.CRITERIA] || '',
+      };
+    });
+
+    res.status(200).json({ logs: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load report log' });
+  }
+}
+
+async function handleUpdateManheletReportLog(body, res) {
+  const { logId, deliveredAt, deliveredTo } = body;
+  if (!logId) {
+    res.status(400).json({ error: 'missing_log_id' });
+    return;
+  }
+  try {
+    await updateRecord(TABLES.MANHELET_REPORTS, logId, {
+      [MANHELET_REPORT_FIELDS.DELIVERED_AT]: deliveredAt || '',
+      [MANHELET_REPORT_FIELDS.DELIVERED_TO]: deliveredTo || '',
+    });
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'update_failed' });
+  }
+}
+
 async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -632,6 +783,21 @@ async function handler(req, res) {
       return;
     case 'delete-patrol':
       await handleDeletePatrol(body, res);
+      return;
+    case 'list-report-categories':
+      await handleListReportCategories(body, res);
+      return;
+    case 'build-manhelet-report':
+      await handleBuildManheletReport(body, res);
+      return;
+    case 'save-manhelet-report-log':
+      await handleSaveManheletReportLog(coordinator, body, res);
+      return;
+    case 'list-manhelet-report-log':
+      await handleListManheletReportLog(body, res);
+      return;
+    case 'update-manhelet-report-log':
+      await handleUpdateManheletReportLog(body, res);
       return;
     default:
       res.status(400).json({ error: 'unknown_action' });

@@ -231,6 +231,41 @@ export function deletePatrol(volunteerId, password, patrolId) {
   });
 }
 
+export function fetchReportCategories(volunteerId, password) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'list-report-categories', volunteerId, password }),
+  });
+}
+
+export function buildManheletReport(volunteerId, password, filters) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'build-manhelet-report', volunteerId, password, ...filters }),
+  });
+}
+
+export function saveManheletReportLog(volunteerId, password, count, criteria) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'save-manhelet-report-log', volunteerId, password, count, criteria }),
+  });
+}
+
+export function fetchManheletReportLog(volunteerId, password) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'list-manhelet-report-log', volunteerId, password }),
+  });
+}
+
+export function updateManheletReportLog(volunteerId, password, logId, deliveredAt, deliveredTo) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'update-manhelet-report-log', volunteerId, password, logId, deliveredAt, deliveredTo }),
+  });
+}
+
 export function fetchUsageSummary(volunteerId, password) {
   return request('/api/coordinator', {
     method: 'POST',

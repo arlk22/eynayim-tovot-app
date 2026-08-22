@@ -15,6 +15,7 @@ export const TABLES = {
   REPORT_CATEGORIES: 'Report Categories',
   REPORT_SUBCATEGORIES: 'Report Subcategories',
   USAGE_LOG: 'API Usage Log',
+  MANHELET_REPORTS: 'דוחות מנהלת הדר',
 };
 
 export const USAGE_LOG_FIELDS = {
@@ -234,6 +235,16 @@ export const MUNICIPALITY_RESPONSE_STATUS = {
   RESPONDED: 'נענה',
   HANDLED: 'טופל',
   REJECTED: 'נדחה',
+};
+
+export const MANHELET_REPORT_FIELDS = {
+  TITLE: 'כותרת',
+  GENERATED_AT: 'תאריך הפקה',
+  DELIVERED_AT: 'תאריך מסירה',
+  PRODUCER: 'מפיק',
+  DELIVERED_TO: 'למי נמסר',
+  COUNT: 'מספר מפגעים',
+  CRITERIA: 'קריטריוני סינון',
 };
 
 export const ACTIVITY_LOG_ACTION_TYPE = {

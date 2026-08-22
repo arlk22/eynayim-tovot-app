@@ -501,3 +501,218 @@
   opacity: 0.4;
   cursor: default;
 }
+
+.manhelet-report__form {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.manhelet-report__form-title {
+  font-size: 15px;
+  margin: 0;
+}
+
+.manhelet-report__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+.manhelet-report__checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.manhelet-report__checkbox-list--inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  max-height: none;
+}
+
+.manhelet-report__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.manhelet-report__row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.manhelet-report__row .manhelet-report__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.manhelet-report__label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.manhelet-report__input {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: inherit;
+  width: 100%;
+}
+
+.manhelet-report__hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.manhelet-report__build-btn {
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.manhelet-report__build-btn:disabled {
+  opacity: 0.6;
+}
+
+.manhelet-report__preview {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.manhelet-report__preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.manhelet-report__export-btn {
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-success);
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.manhelet-report__export-btn:disabled {
+  opacity: 0.5;
+}
+
+.manhelet-report__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.manhelet-report__row-card {
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.manhelet-report__row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+.manhelet-report__row-field {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.manhelet-report__remove-btn {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-danger);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.manhelet-report__history-title {
+  font-size: 15px;
+  margin-bottom: var(--space-3);
+}
+
+.manhelet-report__log-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.manhelet-report__log-producer {
+  font-size: 12px;
+  color: var(--color-text-faint);
+}
+
+.manhelet-report__save-delivery-btn {
+  align-self: flex-start;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.manhelet-report__save-delivery-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
