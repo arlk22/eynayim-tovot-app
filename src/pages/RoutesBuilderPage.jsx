@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchRoutes, saveRoute } from '../lib/api';
+import { fetchRoutes, fetchStreets, saveRoute } from '../lib/api';
 import './RoutesBuilderPage.css';
 
 const EMPTY_FORM = { routeId: null, name: '', streets: ['', ''], customLink: '', directionsText: '' };
+const ZONE_LABELS = { 1: 'אזור 1', 2: 'אזור 2', 3: 'אזור 3', 4: 'אזור 4' };
 
 function buildAutoLink(streets) {
   const clean = streets.map((s) => s.trim()).filter(Boolean);
@@ -18,6 +19,7 @@ export default function RoutesBuilderPage() {
   const [error, setError] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [streetsCatalog, setStreetsCatalog] = useState([]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -31,6 +33,29 @@ export default function RoutesBuilderPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    fetchStreets(coordinatorSession.volunteerId, coordinatorSession.password)
+      .then((data) => setStreetsCatalog(data.streets))
+      .catch(() => setStreetsCatalog([]));
+  }, [coordinatorSession]);
+
+  // Group streets by their first zone so the picker can show <optgroup> per
+  // area (a street tagged with several zones just appears under the first).
+  const streetsByZone = useMemo(() => {
+    const groups = { 1: [], 2: [], 3: [], 4: [] };
+    const other = [];
+    for (const s of streetsCatalog) {
+      const zone = s.zones?.[0];
+      if (groups[zone]) groups[zone].push(s.name);
+      else other.push(s.name);
+    }
+    for (const zone of Object.keys(groups)) {
+      groups[zone].sort((a, b) => a.localeCompare(b, 'he'));
+    }
+    other.sort((a, b) => a.localeCompare(b, 'he'));
+    return { groups, other };
+  }, [streetsCatalog]);
 
   function updateStreet(index, value) {
     setForm((f) => {
@@ -126,17 +151,54 @@ export default function RoutesBuilderPage() {
           />
         </label>
 
+        <label className="routes-builder__label">
+          הוראות הליכה בטקסט (אופציונלי)
+          <textarea
+            className="routes-builder__textarea"
+            value={form.directionsText}
+            onChange={(e) => setForm((f) => ({ ...f, directionsText: e.target.value }))}
+            placeholder={'לדוגמה:\nכיכר מסריק\nלכו אל הנביאים\nפנו ימינה אל יונה\n...'}
+            rows={6}
+          />
+        </label>
+        <p className="routes-builder__tip">
+          💡 בגוגל מפות, בפאנל ההוראות בצד (לחיצה על "פרטים") מופיע בדיוק הטקסט הזה — עם שמות רחובות ו"פנו
+          ימינה/שמאלה" בכל צומת. פשוט מעתיקים אותו משם ומדביקים כאן, כדי שהמתנדבים יראו הוראות הליכה מדויקות בלי
+          לצאת מהאפליקציה.
+        </p>
+
         <div className="routes-builder__streets">
           {form.streets.map((street, i) => (
             <div key={i} className="routes-builder__street-row">
               <span className="routes-builder__street-index">{i + 1}</span>
-              <input
-                type="text"
-                className="routes-builder__input"
+              <select
+                className="routes-builder__input routes-builder__street-select"
                 value={street}
                 onChange={(e) => updateStreet(i, e.target.value)}
-                placeholder="שם רחוב, או לדיוק: 'שם רחוב 5' / 'רחוב פינת רחוב'"
-              />
+              >
+                <option value="">בחרו רחוב…</option>
+                {streetsByZone.other.length > 0 && (
+                  <optgroup label="ללא אזור">
+                    {streetsByZone.other.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {[1, 2, 3, 4].map(
+                  (zone) =>
+                    streetsByZone.groups[zone].length > 0 && (
+                      <optgroup key={zone} label={ZONE_LABELS[zone]}>
+                        {streetsByZone.groups[zone].map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )
+                )}
+              </select>
               <button
                 type="button"
                 className="routes-builder__icon-btn"
@@ -173,9 +235,8 @@ export default function RoutesBuilderPage() {
         </button>
 
         <p className="routes-builder__tip">
-          💡 טיפ: אם הקישור לוקח את המסלול בכיוון לא הגיוני או עם עיקוף מיותר, זה כי גוגל מפות בחר נקודה כלשהי
-          על הרחוב שאינה בדיוק הפינה שרציתם. כדי לקבע את נקודת הפנייה המדויקת, הוסיפו מספר בית (למשל: "שמריהו לוין 5")
-          או ציינו את הפינה (למשל: "אחד העם פינת שמריהו לוין") במקום שם רחוב בלבד.
+          💡 טיפ: הרחובות ברשימה תואמים בדיוק לשמות בגוגל מפות, כדי שהמסלול לא ישתבש. אם הקישור עדיין
+          לוקח בכיוון לא הגיוני או עם עיקוף מיותר, אפשר לקבע את נקודת הפנייה המדויקת בשדה "קישור מותאם אישית" למטה.
         </p>
 
         {autoLink && (
@@ -197,22 +258,6 @@ export default function RoutesBuilderPage() {
         <p className="routes-builder__tip">
           💡 אם הכיוון עדיין לא נכון: פתחו את הקישור למעלה, גררו את הקו הכחול בגוגל מפות כדי לתקן את הנתיב בפועל,
           לחצו על "אפשרויות" ← "העתקת הקישור", והדביקו אותו כאן. הקישור הזה יישמר במקום זה שנוצר אוטומטית מרשימת הרחובות.
-        </p>
-
-        <label className="routes-builder__label">
-          הוראות הליכה בטקסט (אופציונלי)
-          <textarea
-            className="routes-builder__textarea"
-            value={form.directionsText}
-            onChange={(e) => setForm((f) => ({ ...f, directionsText: e.target.value }))}
-            placeholder={'לדוגמה:\nכיכר מסריק\nלכו אל הנביאים\nפנו ימינה אל יונה\n...'}
-            rows={6}
-          />
-        </label>
-        <p className="routes-builder__tip">
-          💡 בגוגל מפות, בפאנל ההוראות בצד (לחיצה על "פרטים") מופיע בדיוק הטקסט הזה — עם שמות רחובות ו"פנו
-          ימינה/שמאלה" בכל צומת. פשוט מעתיקים אותו משם ומדביקים כאן, כדי שהמתנדבים יראו הוראות הליכה מדויקות בלי
-          לצאת מהאפליקציה.
         </p>
 
         {error && <p className="routes-builder__error">{error}</p>}

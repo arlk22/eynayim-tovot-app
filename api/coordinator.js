@@ -11,6 +11,7 @@ import {
   EVENT_STATUS,
   ROUTE_FIELDS,
   USAGE_LOG_FIELDS,
+  STREET_FIELDS,
 } from './_lib/fields.js';
 
 const USAGE_SUMMARY_WINDOW_DAYS = 30;
@@ -255,6 +256,26 @@ async function handleListRoutes(body, res) {
   }
 }
 
+async function handleListStreets(body, res) {
+  try {
+    const streets = await listRecords(TABLES.STREETS, {
+      fields: [STREET_FIELDS.NAME, STREET_FIELDS.ZONE],
+      sort: [{ field: STREET_FIELDS.NAME, direction: 'asc' }],
+    });
+
+    const result = streets.map((s) => ({
+      id: s.id,
+      name: s.fields[STREET_FIELDS.NAME] || '',
+      zones: s.fields[STREET_FIELDS.ZONE] || [],
+    }));
+
+    res.status(200).json({ streets: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load streets' });
+  }
+}
+
 function rankedTotals(rows, key) {
   const totals = new Map();
   for (const row of rows) {
@@ -365,6 +386,9 @@ async function handler(req, res) {
       return;
     case 'list-routes':
       await handleListRoutes(body, res);
+      return;
+    case 'list-streets':
+      await handleListStreets(body, res);
       return;
     case 'save-route':
       await handleSaveRoute(body, res);

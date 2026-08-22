@@ -172,6 +172,13 @@ export function fetchRoutes(volunteerId, password) {
   });
 }
 
+export function fetchStreets(volunteerId, password) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'list-streets', volunteerId, password }),
+  });
+}
+
 export function saveRoute(volunteerId, password, { routeId, name, streets, customLink, directionsText }) {
   return request('/api/coordinator', {
     method: 'POST',

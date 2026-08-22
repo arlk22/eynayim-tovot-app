@@ -152,6 +152,7 @@ export const EVENT_STATUS = {
 
 export const STREET_FIELDS = {
   NAME: 'שם רחוב',
+  ZONE: 'חלק ברובע',
 };
 
 export const REPORT_CATEGORY_FIELDS = {

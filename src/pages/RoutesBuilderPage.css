@@ -80,6 +80,11 @@
   gap: 6px;
 }
 
+.routes-builder__street-select {
+  flex: 1;
+  min-width: 0;
+}
+
 .routes-builder__street-index {
   flex-shrink: 0;
   width: 20px;
