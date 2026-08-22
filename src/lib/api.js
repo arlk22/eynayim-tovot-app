@@ -96,6 +96,20 @@ export function setMokad106TrackingNumber(volunteerId, password, reportId, track
   });
 }
 
+export function setMokadDescription(volunteerId, password, reportId, description) {
+  return request('/api/mokad', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'set-description', volunteerId, password, reportId, description }),
+  });
+}
+
+export function setMokadReadyForExternalReport(volunteerId, password, reportId, ready) {
+  return request('/api/mokad', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'set-ready-for-external-report', volunteerId, password, reportId, ready }),
+  });
+}
+
 export function fetchMunicipalityFollowups(volunteerId, password) {
   return request('/api/mokad', {
     method: 'POST',

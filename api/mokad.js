@@ -262,6 +262,7 @@ async function handleReportDetail(body, res) {
         urgency: f[HADAR_REPORT_FIELDS.URGENCY] || '',
         requiresVisit: !!f[HADAR_REPORT_FIELDS.REQUIRES_VISIT],
         verifyingPatrolId,
+        readyForExternalReport: !!f[HADAR_REPORT_FIELDS.READY_FOR_EXTERNAL_REPORT],
       },
       log,
       availablePatrols,
@@ -307,6 +308,42 @@ async function handleSetTrackingNumber106(body, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'set_tracking_number_failed' });
+  }
+}
+
+async function handleSetDescription(body, res) {
+  const { reportId, description } = body;
+  if (!reportId) {
+    res.status(400).json({ error: 'missing_fields' });
+    return;
+  }
+
+  try {
+    await updateRecord(TABLES.HADAR_NEW_REPORT, reportId, {
+      [HADAR_REPORT_FIELDS.DESCRIPTION]: description || '',
+    });
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'set_description_failed' });
+  }
+}
+
+async function handleSetReadyForExternalReport(body, res) {
+  const { reportId, ready } = body;
+  if (!reportId) {
+    res.status(400).json({ error: 'missing_fields' });
+    return;
+  }
+
+  try {
+    await updateRecord(TABLES.HADAR_NEW_REPORT, reportId, {
+      [HADAR_REPORT_FIELDS.READY_FOR_EXTERNAL_REPORT]: !!ready,
+    });
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'set_ready_failed' });
   }
 }
 
@@ -473,6 +510,12 @@ async function handler(req, res) {
       return;
     case 'set-tracking-number-106':
       await handleSetTrackingNumber106(body, res);
+      return;
+    case 'set-description':
+      await handleSetDescription(body, res);
+      return;
+    case 'set-ready-for-external-report':
+      await handleSetReadyForExternalReport(body, res);
       return;
     case 'municipality-followups':
       await handleMunicipalityFollowups(body, res);

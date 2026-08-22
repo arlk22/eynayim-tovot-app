@@ -197,6 +197,7 @@ export const HADAR_REPORT_FIELDS = {
   LAT: 'Lat',
   LNG: 'Lng',
   TRACKING_NUMBER_106: 'מספר מעקב 106',
+  READY_FOR_EXTERNAL_REPORT: 'מוכן לדיווח חוצה',
 };
 
 export const HADAR_REPORT_TYPE = {

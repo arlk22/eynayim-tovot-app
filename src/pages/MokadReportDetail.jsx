@@ -6,6 +6,8 @@ import {
   addMokadLogEntry,
   setMokadSubcategory,
   setMokad106TrackingNumber,
+  setMokadDescription,
+  setMokadReadyForExternalReport,
 } from '../lib/api';
 import PhotoLightbox from '../components/PhotoLightbox';
 import './MokadReportDetail.css';
@@ -82,13 +84,15 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
   const [savingLog, setSavingLog] = useState(false);
   const [forwarding, setForwarding] = useState(false);
   const [whatsappOpened, setWhatsappOpened] = useState(false);
-  const [whatsappMessageText, setWhatsappMessageText] = useState('');
   const [lightboxSrc, setLightboxSrc] = useState(null);
   const [changingStatus, setChangingStatus] = useState(false);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('');
   const [savingSubcategory, setSavingSubcategory] = useState(false);
   const [trackingNumber106Input, setTrackingNumber106Input] = useState('');
   const [savingTrackingNumber106, setSavingTrackingNumber106] = useState(false);
+  const [descriptionInput, setDescriptionInput] = useState('');
+  const [savingDescription, setSavingDescription] = useState(false);
+  const [savingReady, setSavingReady] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -104,14 +108,17 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
   }, [load]);
 
   useEffect(() => {
-    if (data && !whatsappMessageText) {
-      setWhatsappMessageText(buildWhatsappMessage(data, mokadSession));
-    }
-  }, [data, mokadSession, whatsappMessageText]);
-
-  useEffect(() => {
     if (data) setTrackingNumber106Input(data.report.trackingNumber106 || '');
   }, [data]);
+
+  useEffect(() => {
+    if (data) setDescriptionInput(data.report.description || '');
+  }, [data]);
+
+  // Always derived from the live report data (not independently editable) —
+  // the description field above is the single source of truth, so editing
+  // it here would create two places to update the same content.
+  const whatsappMessageText = data ? buildWhatsappMessage(data, mokadSession) : '';
 
   async function handleAttach() {
     if (!selectedPatrolId) return;
@@ -219,6 +226,34 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
       setError('שמירת מספר המעקב נכשלה, נסו שוב.');
     } finally {
       setSavingTrackingNumber106(false);
+    }
+  }
+
+  async function handleSaveDescription() {
+    if (savingDescription) return;
+    setSavingDescription(true);
+    try {
+      await setMokadDescription(mokadSession.volunteerId, mokadSession.password, reportId, descriptionInput.trim());
+      await load();
+      onChanged?.();
+    } catch {
+      setError('שמירת התיאור נכשלה, נסו שוב.');
+    } finally {
+      setSavingDescription(false);
+    }
+  }
+
+  async function handleToggleReady(e) {
+    const ready = e.target.checked;
+    setSavingReady(true);
+    try {
+      await setMokadReadyForExternalReport(mokadSession.volunteerId, mokadSession.password, reportId, ready);
+      await load();
+      onChanged?.();
+    } catch {
+      setError('עדכון הסימון נכשל, נסו שוב.');
+    } finally {
+      setSavingReady(false);
     }
   }
 
@@ -366,10 +401,35 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
                 ))}
               </select>
               {data.report.urgency && <span>דחיפות: {data.report.urgency}</span>}
+              <label className="mokad-detail__ready-toggle">
+                <input
+                  type="checkbox"
+                  checked={data.report.readyForExternalReport}
+                  onChange={handleToggleReady}
+                  disabled={savingReady}
+                />
+                ✓ מוכן לדיווח חוצה
+              </label>
             </div>
 
             <p className="mokad-detail__address">{data.report.address}</p>
-            {data.report.description && <p className="mokad-detail__description">{data.report.description}</p>}
+
+            <div className="mokad-detail__description-editor">
+              <strong>תיאור המפגע:</strong>
+              <textarea
+                className="mokad-detail__textarea"
+                value={descriptionInput}
+                onChange={(e) => setDescriptionInput(e.target.value)}
+              />
+              <button
+                type="button"
+                className="mokad-detail__btn"
+                onClick={handleSaveDescription}
+                disabled={savingDescription || descriptionInput.trim() === (data.report.description || '')}
+              >
+                {savingDescription ? 'שומר…' : 'שמירת תיאור'}
+              </button>
+            </div>
 
             <div className="mokad-detail__reporter">
               {data.report.reporterName && <span>מדווח: {data.report.reporterName}</span>}
@@ -378,11 +438,13 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
 
             <section className="mokad-detail__section">
               <h3>העברה לגורם מטפל</h3>
-              <p className="mokad-detail__whatsapp-hint">ניתן לערוך את ההודעה לפני השליחה:</p>
+              <p className="mokad-detail__whatsapp-hint">
+                לקריאה בלבד — ההודעה נבנית אוטומטית מתיאור המפגע למעלה. לעריכה, עדכנו את התיאור ושמרו.
+              </p>
               <textarea
                 className="mokad-detail__textarea mokad-detail__whatsapp-preview"
                 value={whatsappMessageText}
-                onChange={(e) => setWhatsappMessageText(e.target.value)}
+                readOnly
               />
               <button
                 type="button"

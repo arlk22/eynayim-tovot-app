@@ -580,7 +580,7 @@ async function handleListReportCategories(body, res) {
 }
 
 async function handleBuildManheletReport(body, res) {
-  const { categoryIds, statuses, dateFrom, dateTo, maxCount, minDaysSince } = body;
+  const { categoryIds, statuses, dateFrom, dateTo, maxCount, minDaysSince, readyOnly } = body;
 
   try {
     const [reports, categories] = await Promise.all([
@@ -613,11 +613,13 @@ async function handleBuildManheletReport(body, res) {
         daysSinceReport: reportDaysSince(reportedAt),
         trackingNumber106: f[HADAR_REPORT_FIELDS.TRACKING_NUMBER_106] || '',
         hasPhoto: !!f[HADAR_REPORT_FIELDS.MAIN_PHOTO]?.[0],
+        readyForExternalReport: !!f[HADAR_REPORT_FIELDS.READY_FOR_EXTERNAL_REPORT],
       };
     });
 
     if (categoryIdSet) result = result.filter((r) => r.categoryId && categoryIdSet.has(r.categoryId));
     if (statusSet) result = result.filter((r) => statusSet.has(r.status));
+    if (readyOnly) result = result.filter((r) => r.readyForExternalReport);
     if (dateFrom) result = result.filter((r) => r.reportedAt && r.reportedAt.slice(0, 10) >= dateFrom);
     if (dateTo) result = result.filter((r) => r.reportedAt && r.reportedAt.slice(0, 10) <= dateTo);
     if (minDaysSince != null && minDaysSince !== '') {

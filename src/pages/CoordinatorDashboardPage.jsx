@@ -699,6 +699,7 @@ function ManheletReportTab() {
   const [dateTo, setDateTo] = useState('');
   const [maxCount, setMaxCount] = useState('');
   const [minDaysSince, setMinDaysSince] = useState('');
+  const [readyOnly, setReadyOnly] = useState(true);
   const [previewRows, setPreviewRows] = useState(null);
   const [totalMatched, setTotalMatched] = useState(0);
   const [building, setBuilding] = useState(false);
@@ -747,6 +748,7 @@ function ManheletReportTab() {
         dateTo: dateTo || undefined,
         maxCount: maxCount || undefined,
         minDaysSince: minDaysSince || undefined,
+        readyOnly,
       });
       setPreviewRows(data.reports);
       setTotalMatched(data.totalMatched);
@@ -892,6 +894,11 @@ function ManheletReportTab() {
         <p className="manhelet-report__hint">
           אפשר להגביל לפי מספר מקסימלי, לפי טווח תאריכים, או שניהם יחד — לפי מה שנוח לקצב המפגשים עם המנהלת.
         </p>
+
+        <label className="manhelet-report__checkbox">
+          <input type="checkbox" checked={readyOnly} onChange={(e) => setReadyOnly(e.target.checked)} />
+          רק מפגעים שסומנו ✓ מוכן לדיווח חוצה
+        </label>
 
         <button type="button" className="manhelet-report__build-btn" onClick={handleBuild} disabled={building}>
           {building ? 'מפיק…' : 'הפק תצוגה מקדימה'}

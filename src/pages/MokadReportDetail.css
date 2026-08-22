@@ -118,9 +118,31 @@
   margin-bottom: var(--space-2);
 }
 
-.mokad-detail__description {
-  font-size: 14px;
+.mokad-detail__ready-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-inline-start: auto;
+}
+
+.mokad-detail__description-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 13px;
   margin-bottom: var(--space-3);
+}
+
+.mokad-detail__description-editor .mokad-detail__textarea {
+  min-height: 70px;
+}
+
+.mokad-detail__whatsapp-preview[readonly] {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  cursor: default;
 }
 
 .mokad-detail__reporter {
