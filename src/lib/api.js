@@ -179,6 +179,20 @@ export function fetchStreets(volunteerId, password) {
   });
 }
 
+export function fetchMyLedPatrols(volunteerId) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'my-led-patrols', volunteerId }),
+  });
+}
+
+export function saveOwnRoute(volunteerId, patrolId, directionsText) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'save-own-route', volunteerId, patrolId, directionsText }),
+  });
+}
+
 export function saveRoute(volunteerId, password, { routeId, name, streets, customLink, directionsText }) {
   return request('/api/coordinator', {
     method: 'POST',

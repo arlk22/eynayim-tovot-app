@@ -1,6 +1,7 @@
-import { listRecords, updateRecord, createRecord } from './_lib/airtable.js';
+import { listRecords, updateRecord, createRecord, getRecord } from './_lib/airtable.js';
 import { wrapHandler } from './_lib/usage-tracker.js';
 import { verifyCoordinator } from './_lib/coordinator-auth.js';
+import { verifyPatrolLeader, namesMatch } from './_lib/patrol-leader-auth.js';
 import {
   TABLES,
   VOLUNTEER_FIELDS,
@@ -351,6 +352,87 @@ async function handleSaveRoute(body, res) {
   }
 }
 
+async function handleMyLedPatrols(volunteerId, res) {
+  if (!volunteerId) {
+    res.status(400).json({ error: 'missing_volunteer' });
+    return;
+  }
+
+  try {
+    const volunteer = await getRecord(TABLES.VOLUNTEERS, volunteerId);
+    const volunteerName = volunteer.fields[VOLUNTEER_FIELDS.NAME];
+
+    const [patrols, routes] = await Promise.all([
+      listRecords(TABLES.PATROLS, {
+        filterByFormula: `IS_AFTER({${PATROL_FIELDS.DATE}}, DATEADD(TODAY(), -1, 'days'))`,
+        sort: [{ field: PATROL_FIELDS.DATE, direction: 'asc' }],
+      }),
+      listRecords(TABLES.PATROL_ROUTES, {
+        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.DIRECTIONS_TEXT],
+      }),
+    ]);
+
+    const routeById = new Map(routes.map((r) => [r.id, r.fields]));
+
+    const mine = patrols
+      .filter((p) => namesMatch(volunteerName, p.fields[PATROL_FIELDS.LEADER]))
+      .map((p) => {
+        const routeId = p.fields[PATROL_FIELDS.ROUTE]?.[0] || null;
+        const route = routeId ? routeById.get(routeId) : null;
+        return {
+          patrolId: p.id,
+          date: p.fields[PATROL_FIELDS.DATE] || null,
+          dayOfWeek: p.fields[PATROL_FIELDS.DAY_OF_WEEK] || null,
+          startTime: p.fields[PATROL_FIELDS.START_TIME] || null,
+          routeId,
+          routeName: route?.[ROUTE_FIELDS.NAME] || '',
+          directionsText: route?.[ROUTE_FIELDS.DIRECTIONS_TEXT] || '',
+        };
+      });
+
+    res.status(200).json({ patrols: mine });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load led patrols' });
+  }
+}
+
+// Deliberately lightweight: a patrol leader just writes the street names and
+// walking direction as free text (same "הוראות הליכה בטקסט" field the full
+// route builder uses) — not the structured zone-picker street list, which
+// stays a רכז/מנהל tool.
+async function handleSaveOwnRoute(leaderAuth, body, res) {
+  const { patrolId, directionsText } = body;
+  const text = (directionsText || '').trim();
+  if (!text) {
+    res.status(400).json({ error: 'invalid_directions' });
+    return;
+  }
+
+  try {
+    const existingRouteId = leaderAuth.patrol.fields[PATROL_FIELDS.ROUTE]?.[0] || null;
+    let record;
+    if (existingRouteId) {
+      record = await updateRecord(TABLES.PATROL_ROUTES, existingRouteId, {
+        [ROUTE_FIELDS.DIRECTIONS_TEXT]: text,
+      });
+    } else {
+      const leaderName = leaderAuth.volunteer.fields[VOLUNTEER_FIELDS.NAME] || '';
+      const patrolDate = leaderAuth.patrol.fields[PATROL_FIELDS.DATE] || '';
+      record = await createRecord(TABLES.PATROL_ROUTES, {
+        [ROUTE_FIELDS.NAME]: `מסלול ${leaderName} ${patrolDate}`.trim(),
+        [ROUTE_FIELDS.DIRECTIONS_TEXT]: text,
+      });
+      await updateRecord(TABLES.PATROLS, patrolId, { [PATROL_FIELDS.ROUTE]: [record.id] });
+    }
+
+    res.status(200).json({ ok: true, directionsText: text });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'save_failed' });
+  }
+}
+
 async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -358,7 +440,31 @@ async function handler(req, res) {
   }
 
   const body = req.body || {};
-  const { action, volunteerId, password } = body;
+  const { action, volunteerId, password, patrolId } = body;
+
+  // These three actions are for regular volunteers (phone login only, no
+  // coordinator password) — "list-streets" is non-sensitive reference data,
+  // "my-led-patrols" just needs a real volunteer identity, and
+  // "save-own-route" is scoped by verifyPatrolLeader to only the one patrol
+  // this volunteer is genuinely listed as leading.
+  if (action === 'list-streets') {
+    await handleListStreets(body, res);
+    return;
+  }
+  if (action === 'my-led-patrols') {
+    await handleMyLedPatrols(volunteerId, res);
+    return;
+  }
+  if (action === 'save-own-route') {
+    const leaderAuth = await verifyPatrolLeader(volunteerId, patrolId);
+    if (!leaderAuth) {
+      res.status(401).json({ error: 'not_patrol_leader' });
+      return;
+    }
+    await handleSaveOwnRoute(leaderAuth, body, res);
+    return;
+  }
+
   const coordinator = await verifyCoordinator(volunteerId, password);
   if (!coordinator) {
     res.status(401).json({ error: 'invalid_credentials' });

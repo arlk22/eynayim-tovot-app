@@ -207,6 +207,10 @@ export default function HomePage() {
         </button>
       )}
 
+      <button type="button" className="home-page__coordinator-link" onClick={() => navigate('/my-route')}>
+        🧭 מוביל/ה סיור? קבעו מסלול
+      </button>
+
       {showReminders && (
         <div className="home-page__popup-backdrop" onClick={() => setShowReminders(false)}>
           <div className="home-page__popup" onClick={(e) => e.stopPropagation()}>

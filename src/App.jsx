@@ -15,6 +15,7 @@ import MokadDashboardPage from './pages/MokadDashboardPage';
 import CommunityPage from './pages/CommunityPage';
 import StatsPage from './pages/StatsPage';
 import RoutesBuilderPage from './pages/RoutesBuilderPage';
+import MyRoutePage from './pages/MyRoutePage';
 import './App.css';
 
 const EVENT_REPORT_URL = 'https://gdform1.fillout.com/t/fzNH38HwdYus';
@@ -121,6 +122,14 @@ export default function App() {
                 <CoordinatorRoute>
                   <RoutesBuilderPage />
                 </CoordinatorRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-route"
+            element={
+              <ProtectedRoute>
+                <MyRoutePage />
               </ProtectedRoute>
             }
           />
