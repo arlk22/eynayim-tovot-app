@@ -121,7 +121,9 @@
 .patrol-card__route,
 .patrol-card__leader,
 .patrol-card__count,
-.patrol-card__joined {
+.patrol-card__joined,
+.patrol-card__zone,
+.patrol-card__route-streets {
   font-size: 13px;
   color: var(--color-text);
   margin: 0;

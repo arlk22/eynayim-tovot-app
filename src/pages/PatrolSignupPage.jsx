@@ -182,6 +182,12 @@ export default function PatrolSignupPage() {
                   </strong>
                   <span>{p.startTime}{p.endTime ? `-${p.endTime}` : ''}</span>
                 </div>
+                {p.routeZones?.length > 0 && (
+                  <p className="patrol-card__zone">אזור: {p.routeZones.join(', ')}</p>
+                )}
+                {p.routeStreets?.length > 0 && (
+                  <p className="patrol-card__route-streets">רחובות לסיור: {p.routeStreets.join(' ← ')}</p>
+                )}
                 {p.routeName && (
                   <p className="patrol-card__route">
                     מסלול: {p.routeName}

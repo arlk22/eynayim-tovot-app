@@ -8,6 +8,7 @@ import {
   REGISTRATION_FIELDS,
   REGISTRATION_STATUS,
   VOLUNTEER_FIELDS,
+  STREET_FIELDS,
 } from './_lib/fields.js';
 
 async function handler(req, res) {
@@ -25,25 +26,35 @@ async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
 
   try {
-    const [patrols, routes, registrations, volunteers] = await Promise.all([
+    const [patrols, routes, registrations, volunteers, streets] = await Promise.all([
       listRecords(TABLES.PATROLS, {
         filterByFormula: `AND(DATETIME_FORMAT({${PATROL_FIELDS.DATE}}, 'YYYY-MM')='${month}', NOT({${PATROL_FIELDS.STATUS}}='${PATROL_STATUS.DRAFT}'))`,
         sort: [{ field: PATROL_FIELDS.DATE, direction: 'asc' }],
       }),
       listRecords(TABLES.PATROL_ROUTES, {
-        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.DIRECTIONS_TEXT],
+        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.DIRECTIONS_TEXT, ROUTE_FIELDS.STREETS_LIST],
       }),
       listRecords(TABLES.REGISTRATIONS, {
         filterByFormula: `{${REGISTRATION_FIELDS.STATUS}}='${REGISTRATION_STATUS.REGISTERED}'`,
         fields: [REGISTRATION_FIELDS.PATROLS, REGISTRATION_FIELDS.VOLUNTEER],
       }),
       listRecords(TABLES.VOLUNTEERS, { fields: [VOLUNTEER_FIELDS.NAME] }),
+      listRecords(TABLES.STREETS, { fields: [STREET_FIELDS.NAME, STREET_FIELDS.ZONE] }),
     ]);
 
     const routeNameById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.NAME] || '']));
     const routeLinkById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.LINK] || '']));
     const routeDirectionsById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.DIRECTIONS_TEXT] || '']));
+    const routeStreetsById = new Map(
+      routes.map((r) => [
+        r.id,
+        (r.fields[ROUTE_FIELDS.STREETS_LIST] || '').split('\n').filter(Boolean),
+      ])
+    );
     const volunteerNameById = new Map(volunteers.map((v) => [v.id, v.fields[VOLUNTEER_FIELDS.NAME] || '']));
+    const zonesByStreetName = new Map(
+      streets.map((s) => [s.fields[STREET_FIELDS.NAME], s.fields[STREET_FIELDS.ZONE] || []])
+    );
 
     const registrationsByPatrolId = new Map();
     for (const reg of registrations) {
@@ -60,6 +71,10 @@ async function handler(req, res) {
     const result = patrols.map((p) => {
       const f = p.fields;
       const routeId = f[PATROL_FIELDS.ROUTE]?.[0];
+      const routeStreets = routeId ? routeStreetsById.get(routeId) || [] : [];
+      // A route's "zone" isn't stored directly — it's derived from the zones
+      // of its own streets, since a route can legitimately cross more than one.
+      const routeZones = [...new Set(routeStreets.flatMap((name) => zonesByStreetName.get(name) || []))].sort();
       return {
         id: p.id,
         date: f[PATROL_FIELDS.DATE] || null,
@@ -69,6 +84,8 @@ async function handler(req, res) {
         routeName: routeId ? routeNameById.get(routeId) || null : null,
         routeLink: routeId ? routeLinkById.get(routeId) || null : null,
         routeDirections: routeId ? routeDirectionsById.get(routeId) || null : null,
+        routeStreets,
+        routeZones,
         leader: f[PATROL_FIELDS.LEADER] || null,
         maxParticipants: f[PATROL_FIELDS.MAX_PARTICIPANTS] ?? null,
         spotsLeft: f[PATROL_FIELDS.SPOTS_LEFT] ?? null,
