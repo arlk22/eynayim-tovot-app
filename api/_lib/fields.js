@@ -81,6 +81,7 @@ export const ROUTE_FIELDS = {
   ID: 'Route ID',
   NAME: 'שם המסלול',
   AREA: 'אזור',
+  ZONE: 'אזור מסלול',
   DURATION: 'משך',
   MEETING_POINT: 'נקודת מפגש',
   DESCRIPTION: 'תיאור מסלול הסיור',

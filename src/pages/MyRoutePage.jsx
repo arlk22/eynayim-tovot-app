@@ -3,6 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import { fetchMyLedPatrols, saveOwnRoute } from '../lib/api';
 import './MyRoutePage.css';
 
+const ZONE_OPTIONS = [
+  { value: '1', label: 'אזור 1' },
+  { value: '2', label: 'אזור 2' },
+  { value: '3', label: 'אזור 3' },
+  { value: '4', label: 'אזור 4' },
+];
+
 function formatDate(dateStr) {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
@@ -15,6 +22,7 @@ export default function MyRoutePage() {
   const [error, setError] = useState(null);
   const [selectedPatrolId, setSelectedPatrolId] = useState(null);
   const [directionsText, setDirectionsText] = useState('');
+  const [zone, setZone] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -34,6 +42,7 @@ export default function MyRoutePage() {
   function selectPatrol(patrol) {
     setSelectedPatrolId(patrol.patrolId);
     setDirectionsText(patrol.directionsText || '');
+    setZone(patrol.zone || '');
     setSaved(false);
     setError(null);
   }
@@ -43,10 +52,14 @@ export default function MyRoutePage() {
       setError('יש לכתוב את הוראות ההליכה לפני השמירה.');
       return;
     }
+    if (!zone) {
+      setError('יש לבחור אזור לפני השמירה.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      await saveOwnRoute(volunteer.id, selectedPatrolId, directionsText.trim());
+      await saveOwnRoute(volunteer.id, selectedPatrolId, directionsText.trim(), zone);
       setSaved(true);
       await load();
     } catch {
@@ -88,6 +101,28 @@ export default function MyRoutePage() {
 
       {selectedPatrolId && (
         <div className="my-route__editor">
+          <label className="my-route__label">
+            אזור הסיור
+            <select
+              className="my-route__select"
+              value={zone}
+              onChange={(e) => {
+                setZone(e.target.value);
+                setSaved(false);
+              }}
+            >
+              <option value="">בחרו אזור…</option>
+              {ZONE_OPTIONS.map((z) => (
+                <option key={z.value} value={z.value}>
+                  {z.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="my-route__tip">
+            למתנדבים יוצגו הוראות ההליכה שכתבתם, וגם רשימת הרחובות הכללית של האזור שבחרתם — כדי שיידעו למה לצפות גם בלי מסלול מסודר.
+          </p>
+
           <label className="my-route__label">
             הוראות הליכה (סדר רחובות, פניות ימינה/שמאלה)
             <textarea

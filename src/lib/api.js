@@ -186,10 +186,10 @@ export function fetchMyLedPatrols(volunteerId) {
   });
 }
 
-export function saveOwnRoute(volunteerId, patrolId, directionsText) {
+export function saveOwnRoute(volunteerId, patrolId, directionsText, zone) {
   return request('/api/coordinator', {
     method: 'POST',
-    body: JSON.stringify({ action: 'save-own-route', volunteerId, patrolId, directionsText }),
+    body: JSON.stringify({ action: 'save-own-route', volunteerId, patrolId, directionsText, zone }),
   });
 }
 

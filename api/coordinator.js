@@ -369,7 +369,7 @@ async function handleMyLedPatrols(volunteerId, res) {
         sort: [{ field: PATROL_FIELDS.DATE, direction: 'asc' }],
       }),
       listRecords(TABLES.PATROL_ROUTES, {
-        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.DIRECTIONS_TEXT],
+        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.DIRECTIONS_TEXT, ROUTE_FIELDS.ZONE],
       }),
     ]);
 
@@ -388,6 +388,7 @@ async function handleMyLedPatrols(volunteerId, res) {
           routeId,
           routeName: route?.[ROUTE_FIELDS.NAME] || '',
           directionsText: route?.[ROUTE_FIELDS.DIRECTIONS_TEXT] || '',
+          zone: route?.[ROUTE_FIELDS.ZONE] || '',
         };
       });
 
@@ -403,10 +404,14 @@ async function handleMyLedPatrols(volunteerId, res) {
 // route builder uses) — not the structured zone-picker street list, which
 // stays a רכז/מנהל tool.
 async function handleSaveOwnRoute(leaderAuth, body, res) {
-  const { patrolId, directionsText } = body;
+  const { patrolId, directionsText, zone } = body;
   const text = (directionsText || '').trim();
   if (!text) {
     res.status(400).json({ error: 'invalid_directions' });
+    return;
+  }
+  if (!zone || !['1', '2', '3', '4'].includes(zone)) {
+    res.status(400).json({ error: 'invalid_zone' });
     return;
   }
 
@@ -416,6 +421,7 @@ async function handleSaveOwnRoute(leaderAuth, body, res) {
     if (existingRouteId) {
       record = await updateRecord(TABLES.PATROL_ROUTES, existingRouteId, {
         [ROUTE_FIELDS.DIRECTIONS_TEXT]: text,
+        [ROUTE_FIELDS.ZONE]: zone,
       });
     } else {
       const leaderName = leaderAuth.volunteer.fields[VOLUNTEER_FIELDS.NAME] || '';
@@ -423,11 +429,12 @@ async function handleSaveOwnRoute(leaderAuth, body, res) {
       record = await createRecord(TABLES.PATROL_ROUTES, {
         [ROUTE_FIELDS.NAME]: `מסלול ${leaderName} ${patrolDate}`.trim(),
         [ROUTE_FIELDS.DIRECTIONS_TEXT]: text,
+        [ROUTE_FIELDS.ZONE]: zone,
       });
       await updateRecord(TABLES.PATROLS, patrolId, { [PATROL_FIELDS.ROUTE]: [record.id] });
     }
 
-    res.status(200).json({ ok: true, directionsText: text });
+    res.status(200).json({ ok: true, directionsText: text, zone });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'save_failed' });

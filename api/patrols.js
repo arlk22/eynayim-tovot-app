@@ -32,7 +32,7 @@ async function handler(req, res) {
         sort: [{ field: PATROL_FIELDS.DATE, direction: 'asc' }],
       }),
       listRecords(TABLES.PATROL_ROUTES, {
-        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.DIRECTIONS_TEXT, ROUTE_FIELDS.STREETS_LIST],
+        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.DIRECTIONS_TEXT, ROUTE_FIELDS.STREETS_LIST, ROUTE_FIELDS.ZONE],
       }),
       listRecords(TABLES.REGISTRATIONS, {
         filterByFormula: `{${REGISTRATION_FIELDS.STATUS}}='${REGISTRATION_STATUS.REGISTERED}'`,
@@ -51,10 +51,24 @@ async function handler(req, res) {
         (r.fields[ROUTE_FIELDS.STREETS_LIST] || '').split('\n').filter(Boolean),
       ])
     );
+    const routeZoneById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.ZONE] || null]));
     const volunteerNameById = new Map(volunteers.map((v) => [v.id, v.fields[VOLUNTEER_FIELDS.NAME] || '']));
     const zonesByStreetName = new Map(
       streets.map((s) => [s.fields[STREET_FIELDS.NAME], s.fields[STREET_FIELDS.ZONE] || []])
     );
+    // Reverse of zonesByStreetName — used as a fallback when a route has no
+    // explicit street list (e.g. a patrol leader's free-text-only route):
+    // show every street tagged with the route's assigned zone instead of
+    // nothing at all. Not an ordered walking path, just area orientation.
+    const streetNamesByZone = new Map();
+    for (const s of streets) {
+      const name = s.fields[STREET_FIELDS.NAME];
+      for (const zone of s.fields[STREET_FIELDS.ZONE] || []) {
+        if (!streetNamesByZone.has(zone)) streetNamesByZone.set(zone, []);
+        streetNamesByZone.get(zone).push(name);
+      }
+    }
+    for (const list of streetNamesByZone.values()) list.sort((a, b) => a.localeCompare(b, 'he'));
 
     const registrationsByPatrolId = new Map();
     for (const reg of registrations) {
@@ -74,7 +88,15 @@ async function handler(req, res) {
       const routeStreets = routeId ? routeStreetsById.get(routeId) || [] : [];
       // A route's "zone" isn't stored directly — it's derived from the zones
       // of its own streets, since a route can legitimately cross more than one.
-      const routeZones = [...new Set(routeStreets.flatMap((name) => zonesByStreetName.get(name) || []))].sort();
+      let routeZones = [...new Set(routeStreets.flatMap((name) => zonesByStreetName.get(name) || []))].sort();
+      let zoneStreets = [];
+      if (routeStreets.length === 0 && routeId) {
+        const manualZone = routeZoneById.get(routeId);
+        if (manualZone) {
+          routeZones = [manualZone];
+          zoneStreets = streetNamesByZone.get(manualZone) || [];
+        }
+      }
       return {
         id: p.id,
         date: f[PATROL_FIELDS.DATE] || null,
@@ -86,6 +108,7 @@ async function handler(req, res) {
         routeDirections: routeId ? routeDirectionsById.get(routeId) || null : null,
         routeStreets,
         routeZones,
+        zoneStreets,
         leader: f[PATROL_FIELDS.LEADER] || null,
         maxParticipants: f[PATROL_FIELDS.MAX_PARTICIPANTS] ?? null,
         spotsLeft: f[PATROL_FIELDS.SPOTS_LEFT] ?? null,

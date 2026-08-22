@@ -188,6 +188,9 @@ export default function PatrolSignupPage() {
                 {p.routeStreets?.length > 0 && (
                   <p className="patrol-card__route-streets">רחובות לסיור: {p.routeStreets.join(' ← ')}</p>
                 )}
+                {p.routeStreets?.length === 0 && p.zoneStreets?.length > 0 && (
+                  <p className="patrol-card__route-streets">רחובות באזור: {p.zoneStreets.join(', ')}</p>
+                )}
                 {p.routeName && (
                   <p className="patrol-card__route">
                     מסלול: {p.routeName}
