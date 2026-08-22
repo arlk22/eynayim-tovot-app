@@ -182,6 +182,9 @@ export default function PatrolSignupPage() {
                   </strong>
                   <span>{p.startTime}{p.endTime ? `-${p.endTime}` : ''}</span>
                 </div>
+                {p.routeMeetingPoint && (
+                  <p className="patrol-card__meeting-point">📍 נקודת מפגש: {p.routeMeetingPoint}</p>
+                )}
                 {p.routeZones?.length > 0 && (
                   <p className="patrol-card__zone">אזור: {p.routeZones.join(', ')}</p>
                 )}

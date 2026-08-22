@@ -235,7 +235,7 @@ async function handleTomorrowRegistrations(body, res) {
 async function handleListRoutes(body, res) {
   try {
     const routes = await listRecords(TABLES.PATROL_ROUTES, {
-      fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.STREETS_LIST, ROUTE_FIELDS.DIRECTIONS_TEXT],
+      fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.STREETS_LIST, ROUTE_FIELDS.DIRECTIONS_TEXT, ROUTE_FIELDS.MEETING_POINT],
       sort: [{ field: ROUTE_FIELDS.NAME, direction: 'asc' }],
     });
 
@@ -248,6 +248,7 @@ async function handleListRoutes(body, res) {
         link: f[ROUTE_FIELDS.LINK] || '',
         streets: streetsRaw ? streetsRaw.split('\n').filter(Boolean) : [],
         directionsText: f[ROUTE_FIELDS.DIRECTIONS_TEXT] || '',
+        meetingPoint: f[ROUTE_FIELDS.MEETING_POINT] || '',
       };
     });
 
@@ -320,7 +321,7 @@ async function handleUsageSummary(body, res) {
 }
 
 async function handleSaveRoute(body, res) {
-  const { routeId, name, streets, customLink, directionsText } = body;
+  const { routeId, name, streets, customLink, directionsText, meetingPoint } = body;
   if (!name || !Array.isArray(streets) || streets.length < 2) {
     res.status(400).json({ error: 'invalid_route' });
     return;
@@ -337,6 +338,7 @@ async function handleSaveRoute(body, res) {
       [ROUTE_FIELDS.STREETS_LIST]: streets.join('\n'),
       [ROUTE_FIELDS.LINK]: link,
       [ROUTE_FIELDS.DIRECTIONS_TEXT]: directionsText || '',
+      [ROUTE_FIELDS.MEETING_POINT]: meetingPoint || '',
     };
 
     let record;
@@ -346,7 +348,10 @@ async function handleSaveRoute(body, res) {
       record = await createRecord(TABLES.PATROL_ROUTES, fields);
     }
 
-    res.status(200).json({ ok: true, route: { id: record.id, name, streets, link, directionsText: directionsText || '' } });
+    res.status(200).json({
+      ok: true,
+      route: { id: record.id, name, streets, link, directionsText: directionsText || '', meetingPoint: meetingPoint || '' },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'save_failed' });
@@ -369,7 +374,7 @@ async function handleMyLedPatrols(volunteerId, res) {
         sort: [{ field: PATROL_FIELDS.DATE, direction: 'asc' }],
       }),
       listRecords(TABLES.PATROL_ROUTES, {
-        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.DIRECTIONS_TEXT, ROUTE_FIELDS.ZONE],
+        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.DIRECTIONS_TEXT, ROUTE_FIELDS.ZONE, ROUTE_FIELDS.MEETING_POINT],
       }),
     ]);
 
@@ -389,6 +394,7 @@ async function handleMyLedPatrols(volunteerId, res) {
           routeName: route?.[ROUTE_FIELDS.NAME] || '',
           directionsText: route?.[ROUTE_FIELDS.DIRECTIONS_TEXT] || '',
           zone: route?.[ROUTE_FIELDS.ZONE] || '',
+          meetingPoint: route?.[ROUTE_FIELDS.MEETING_POINT] || '',
         };
       });
 
@@ -404,7 +410,7 @@ async function handleMyLedPatrols(volunteerId, res) {
 // route builder uses) — not the structured zone-picker street list, which
 // stays a רכז/מנהל tool.
 async function handleSaveOwnRoute(leaderAuth, body, res) {
-  const { patrolId, directionsText, zone } = body;
+  const { patrolId, directionsText, zone, meetingPoint } = body;
   const text = (directionsText || '').trim();
   if (!text) {
     res.status(400).json({ error: 'invalid_directions' });
@@ -414,6 +420,7 @@ async function handleSaveOwnRoute(leaderAuth, body, res) {
     res.status(400).json({ error: 'invalid_zone' });
     return;
   }
+  const meeting = (meetingPoint || '').trim();
 
   try {
     const existingRouteId = leaderAuth.patrol.fields[PATROL_FIELDS.ROUTE]?.[0] || null;
@@ -422,6 +429,7 @@ async function handleSaveOwnRoute(leaderAuth, body, res) {
       record = await updateRecord(TABLES.PATROL_ROUTES, existingRouteId, {
         [ROUTE_FIELDS.DIRECTIONS_TEXT]: text,
         [ROUTE_FIELDS.ZONE]: zone,
+        [ROUTE_FIELDS.MEETING_POINT]: meeting,
       });
     } else {
       const leaderName = leaderAuth.volunteer.fields[VOLUNTEER_FIELDS.NAME] || '';
@@ -430,11 +438,12 @@ async function handleSaveOwnRoute(leaderAuth, body, res) {
         [ROUTE_FIELDS.NAME]: `מסלול ${leaderName} ${patrolDate}`.trim(),
         [ROUTE_FIELDS.DIRECTIONS_TEXT]: text,
         [ROUTE_FIELDS.ZONE]: zone,
+        [ROUTE_FIELDS.MEETING_POINT]: meeting,
       });
       await updateRecord(TABLES.PATROLS, patrolId, { [PATROL_FIELDS.ROUTE]: [record.id] });
     }
 
-    res.status(200).json({ ok: true, directionsText: text, zone });
+    res.status(200).json({ ok: true, directionsText: text, zone, meetingPoint: meeting });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'save_failed' });

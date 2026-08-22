@@ -32,7 +32,14 @@ async function handler(req, res) {
         sort: [{ field: PATROL_FIELDS.DATE, direction: 'asc' }],
       }),
       listRecords(TABLES.PATROL_ROUTES, {
-        fields: [ROUTE_FIELDS.NAME, ROUTE_FIELDS.LINK, ROUTE_FIELDS.DIRECTIONS_TEXT, ROUTE_FIELDS.STREETS_LIST, ROUTE_FIELDS.ZONE],
+        fields: [
+          ROUTE_FIELDS.NAME,
+          ROUTE_FIELDS.LINK,
+          ROUTE_FIELDS.DIRECTIONS_TEXT,
+          ROUTE_FIELDS.STREETS_LIST,
+          ROUTE_FIELDS.ZONE,
+          ROUTE_FIELDS.MEETING_POINT,
+        ],
       }),
       listRecords(TABLES.REGISTRATIONS, {
         filterByFormula: `{${REGISTRATION_FIELDS.STATUS}}='${REGISTRATION_STATUS.REGISTERED}'`,
@@ -45,6 +52,7 @@ async function handler(req, res) {
     const routeNameById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.NAME] || '']));
     const routeLinkById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.LINK] || '']));
     const routeDirectionsById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.DIRECTIONS_TEXT] || '']));
+    const routeMeetingPointById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.MEETING_POINT] || '']));
     const routeStreetsById = new Map(
       routes.map((r) => [
         r.id,
@@ -106,6 +114,7 @@ async function handler(req, res) {
         routeName: routeId ? routeNameById.get(routeId) || null : null,
         routeLink: routeId ? routeLinkById.get(routeId) || null : null,
         routeDirections: routeId ? routeDirectionsById.get(routeId) || null : null,
+        routeMeetingPoint: routeId ? routeMeetingPointById.get(routeId) || null : null,
         routeStreets,
         routeZones,
         zoneStreets,

@@ -23,6 +23,7 @@ export default function MyRoutePage() {
   const [selectedPatrolId, setSelectedPatrolId] = useState(null);
   const [directionsText, setDirectionsText] = useState('');
   const [zone, setZone] = useState('');
+  const [meetingPoint, setMeetingPoint] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -43,6 +44,7 @@ export default function MyRoutePage() {
     setSelectedPatrolId(patrol.patrolId);
     setDirectionsText(patrol.directionsText || '');
     setZone(patrol.zone || '');
+    setMeetingPoint(patrol.meetingPoint || '');
     setSaved(false);
     setError(null);
   }
@@ -59,7 +61,7 @@ export default function MyRoutePage() {
     setSaving(true);
     setError(null);
     try {
-      await saveOwnRoute(volunteer.id, selectedPatrolId, directionsText.trim(), zone);
+      await saveOwnRoute(volunteer.id, selectedPatrolId, directionsText.trim(), zone, meetingPoint.trim());
       setSaved(true);
       await load();
     } catch {
@@ -122,6 +124,20 @@ export default function MyRoutePage() {
           <p className="my-route__tip">
             למתנדבים יוצגו הוראות ההליכה שכתבתם, וגם רשימת הרחובות הכללית של האזור שבחרתם — כדי שיידעו למה לצפות גם בלי מסלול מסודר.
           </p>
+
+          <label className="my-route__label">
+            נקודת מפגש ליציאה לסיור (אופציונלי)
+            <input
+              type="text"
+              className="my-route__input"
+              value={meetingPoint}
+              onChange={(e) => {
+                setMeetingPoint(e.target.value);
+                setSaved(false);
+              }}
+              placeholder="לדוגמה: פינת הרצל/יונה, ליד הפרחייה"
+            />
+          </label>
 
           <label className="my-route__label">
             הוראות הליכה (סדר רחובות, פניות ימינה/שמאלה)

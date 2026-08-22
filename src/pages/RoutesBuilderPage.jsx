@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchRoutes, fetchStreets, saveRoute } from '../lib/api';
 import './RoutesBuilderPage.css';
 
-const EMPTY_FORM = { routeId: null, name: '', streets: ['', ''], customLink: '', directionsText: '' };
+const EMPTY_FORM = { routeId: null, name: '', streets: ['', ''], customLink: '', directionsText: '', meetingPoint: '' };
 const ZONE_LABELS = { 1: 'אזור 1', 2: 'אזור 2', 3: 'אזור 3', 4: 'אזור 4' };
 
 function buildAutoLink(streets) {
@@ -90,7 +90,14 @@ export default function RoutesBuilderPage() {
     // A saved link that differs from what the streets alone would generate means
     // it was manually corrected in Google Maps (e.g. by dragging the route line) — preserve it.
     const customLink = route.link && route.link !== autoLink ? route.link : '';
-    setForm({ routeId: route.id, name: route.name, streets, customLink, directionsText: route.directionsText || '' });
+    setForm({
+      routeId: route.id,
+      name: route.name,
+      streets,
+      customLink,
+      directionsText: route.directionsText || '',
+      meetingPoint: route.meetingPoint || '',
+    });
     setError(null);
   }
 
@@ -121,6 +128,7 @@ export default function RoutesBuilderPage() {
         streets: cleanStreets,
         customLink: customLink || undefined,
         directionsText: form.directionsText.trim() || undefined,
+        meetingPoint: form.meetingPoint.trim() || undefined,
       });
       newRoute();
       await load();
@@ -149,6 +157,17 @@ export default function RoutesBuilderPage() {
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             placeholder="לדוגמה: מסלול הרצל-ארלוזורוב"
+          />
+        </label>
+
+        <label className="routes-builder__label">
+          נקודת מפגש ליציאה לסיור (אופציונלי)
+          <input
+            type="text"
+            className="routes-builder__input"
+            value={form.meetingPoint}
+            onChange={(e) => setForm((f) => ({ ...f, meetingPoint: e.target.value }))}
+            placeholder="לדוגמה: פינת הרצל/יונה, ליד הפרחייה"
           />
         </label>
 
@@ -318,6 +337,7 @@ export default function RoutesBuilderPage() {
               </button>
             </div>
             <p className="route-card__streets">{r.streets.join(' ← ')}</p>
+            {r.meetingPoint && <p className="route-card__streets">📍 נקודת מפגש: {r.meetingPoint}</p>}
             {r.link && (
               <a href={r.link} target="_blank" rel="noopener noreferrer" className="route-card__link">
                 🔗 פתיחה בגוגל מפות

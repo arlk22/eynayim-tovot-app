@@ -186,17 +186,27 @@ export function fetchMyLedPatrols(volunteerId) {
   });
 }
 
-export function saveOwnRoute(volunteerId, patrolId, directionsText, zone) {
+export function saveOwnRoute(volunteerId, patrolId, directionsText, zone, meetingPoint) {
   return request('/api/coordinator', {
     method: 'POST',
-    body: JSON.stringify({ action: 'save-own-route', volunteerId, patrolId, directionsText, zone }),
+    body: JSON.stringify({ action: 'save-own-route', volunteerId, patrolId, directionsText, zone, meetingPoint }),
   });
 }
 
-export function saveRoute(volunteerId, password, { routeId, name, streets, customLink, directionsText }) {
+export function saveRoute(volunteerId, password, { routeId, name, streets, customLink, directionsText, meetingPoint }) {
   return request('/api/coordinator', {
     method: 'POST',
-    body: JSON.stringify({ action: 'save-route', volunteerId, password, routeId, name, streets, customLink, directionsText }),
+    body: JSON.stringify({
+      action: 'save-route',
+      volunteerId,
+      password,
+      routeId,
+      name,
+      streets,
+      customLink,
+      directionsText,
+      meetingPoint,
+    }),
   });
 }
 
