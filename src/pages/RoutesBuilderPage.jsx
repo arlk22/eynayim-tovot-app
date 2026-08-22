@@ -20,6 +20,7 @@ export default function RoutesBuilderPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [streetsCatalog, setStreetsCatalog] = useState([]);
+  const [zoneFilter, setZoneFilter] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -167,38 +168,67 @@ export default function RoutesBuilderPage() {
           לצאת מהאפליקציה.
         </p>
 
+        <label className="routes-builder__label">
+          הצג רחובות מאזור
+          <select
+            className="routes-builder__input"
+            value={zoneFilter}
+            onChange={(e) => setZoneFilter(e.target.value)}
+          >
+            <option value="">הכל (כל האזורים)</option>
+            {[1, 2, 3, 4].map((zone) => (
+              <option key={zone} value={zone}>
+                {ZONE_LABELS[zone]}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <div className="routes-builder__streets">
-          {form.streets.map((street, i) => (
-            <div key={i} className="routes-builder__street-row">
-              <span className="routes-builder__street-index">{i + 1}</span>
-              <select
-                className="routes-builder__input routes-builder__street-select"
-                value={street}
-                onChange={(e) => updateStreet(i, e.target.value)}
-              >
-                <option value="">בחרו רחוב…</option>
-                {streetsByZone.other.length > 0 && (
-                  <optgroup label="ללא אזור">
-                    {streetsByZone.other.map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {[1, 2, 3, 4].map(
-                  (zone) =>
-                    streetsByZone.groups[zone].length > 0 && (
-                      <optgroup key={zone} label={ZONE_LABELS[zone]}>
-                        {streetsByZone.groups[zone].map((name) => (
-                          <option key={name} value={name}>
-                            {name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )
-                )}
-              </select>
+          {form.streets.map((street, i) => {
+            // Keep the row's current pick visible even if it falls outside the
+            // active zone filter — switching the filter shouldn't blank out
+            // streets already chosen in a different area.
+            const currentZone = zoneFilter
+              ? streetsCatalog.find((s) => s.name === street)?.zones?.[0]
+              : null;
+            const showCurrentSeparately = zoneFilter && street && currentZone !== zoneFilter;
+            return (
+              <div key={i} className="routes-builder__street-row">
+                <span className="routes-builder__street-index">{i + 1}</span>
+                <select
+                  className="routes-builder__input routes-builder__street-select"
+                  value={street}
+                  onChange={(e) => updateStreet(i, e.target.value)}
+                >
+                  <option value="">בחרו רחוב…</option>
+                  {showCurrentSeparately && (
+                    <optgroup label="נבחר כרגע">
+                      <option value={street}>{street}</option>
+                    </optgroup>
+                  )}
+                  {!zoneFilter && streetsByZone.other.length > 0 && (
+                    <optgroup label="ללא אזור">
+                      {streetsByZone.other.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {(zoneFilter ? [Number(zoneFilter)] : [1, 2, 3, 4]).map(
+                    (zone) =>
+                      streetsByZone.groups[zone].length > 0 && (
+                        <optgroup key={zone} label={ZONE_LABELS[zone]}>
+                          {streetsByZone.groups[zone].map((name) => (
+                            <option key={name} value={name}>
+                              {name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )
+                  )}
+                </select>
               <button
                 type="button"
                 className="routes-builder__icon-btn"
@@ -226,8 +256,9 @@ export default function RoutesBuilderPage() {
               >
                 ✕
               </button>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
 
         <button type="button" className="routes-builder__add-street" onClick={addStreet}>
