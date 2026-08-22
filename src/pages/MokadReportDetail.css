@@ -98,6 +98,20 @@
   width: auto;
 }
 
+.mokad-detail__tracking-106-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.mokad-detail__input--inline {
+  width: auto;
+  flex: 1;
+  min-width: 120px;
+  padding: 6px 10px;
+}
+
 .mokad-detail__address {
   font-size: 13px;
   color: var(--color-text-muted);

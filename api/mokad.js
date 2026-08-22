@@ -243,6 +243,7 @@ async function handleReportDetail(body, res) {
       report: {
         id: report.id,
         reportNumber: f[HADAR_REPORT_FIELDS.ID] ?? null,
+        trackingNumber106: f[HADAR_REPORT_FIELDS.TRACKING_NUMBER_106] || '',
         reportedAt: f[HADAR_REPORT_FIELDS.REPORTED_AT] || null,
         daysSinceReport: daysSince(f[HADAR_REPORT_FIELDS.REPORTED_AT]),
         category: category?.fields?.[REPORT_CATEGORY_FIELDS.NAME] || '',
@@ -288,6 +289,24 @@ async function handleSetSubcategory(body, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'set_subcategory_failed' });
+  }
+}
+
+async function handleSetTrackingNumber106(body, res) {
+  const { reportId, trackingNumber } = body;
+  if (!reportId) {
+    res.status(400).json({ error: 'missing_fields' });
+    return;
+  }
+
+  try {
+    await updateRecord(TABLES.HADAR_NEW_REPORT, reportId, {
+      [HADAR_REPORT_FIELDS.TRACKING_NUMBER_106]: trackingNumber || '',
+    });
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'set_tracking_number_failed' });
   }
 }
 
@@ -451,6 +470,9 @@ async function handler(req, res) {
       return;
     case 'set-subcategory':
       await handleSetSubcategory(body, res);
+      return;
+    case 'set-tracking-number-106':
+      await handleSetTrackingNumber106(body, res);
       return;
     case 'municipality-followups':
       await handleMunicipalityFollowups(body, res);

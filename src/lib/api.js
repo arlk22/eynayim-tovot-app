@@ -83,6 +83,19 @@ export function setMokadSubcategory(volunteerId, password, reportId, subcategory
   });
 }
 
+export function setMokad106TrackingNumber(volunteerId, password, reportId, trackingNumber) {
+  return request('/api/mokad', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'set-tracking-number-106',
+      volunteerId,
+      password,
+      reportId,
+      trackingNumber,
+    }),
+  });
+}
+
 export function fetchMunicipalityFollowups(volunteerId, password) {
   return request('/api/mokad', {
     method: 'POST',

@@ -193,6 +193,7 @@ export const HADAR_REPORT_FIELDS = {
   ACTIVITY_LOG: 'Activity_Log',
   LAT: 'Lat',
   LNG: 'Lng',
+  TRACKING_NUMBER_106: 'מספר מעקב 106',
 };
 
 export const HADAR_REPORT_TYPE = {

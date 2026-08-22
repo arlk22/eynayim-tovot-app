@@ -5,6 +5,7 @@ import {
   attachMokadPatrol,
   addMokadLogEntry,
   setMokadSubcategory,
+  setMokad106TrackingNumber,
 } from '../lib/api';
 import PhotoLightbox from '../components/PhotoLightbox';
 import './MokadReportDetail.css';
@@ -86,6 +87,8 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
   const [changingStatus, setChangingStatus] = useState(false);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('');
   const [savingSubcategory, setSavingSubcategory] = useState(false);
+  const [trackingNumber106Input, setTrackingNumber106Input] = useState('');
+  const [savingTrackingNumber106, setSavingTrackingNumber106] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -105,6 +108,10 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
       setWhatsappMessageText(buildWhatsappMessage(data, mokadSession));
     }
   }, [data, mokadSession, whatsappMessageText]);
+
+  useEffect(() => {
+    if (data) setTrackingNumber106Input(data.report.trackingNumber106 || '');
+  }, [data]);
 
   async function handleAttach() {
     if (!selectedPatrolId) return;
@@ -196,6 +203,25 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
     }
   }
 
+  async function handleSaveTrackingNumber106() {
+    if (savingTrackingNumber106) return;
+    setSavingTrackingNumber106(true);
+    try {
+      await setMokad106TrackingNumber(
+        mokadSession.volunteerId,
+        mokadSession.password,
+        reportId,
+        trackingNumber106Input.trim()
+      );
+      await load();
+      onChanged?.();
+    } catch {
+      setError('שמירת מספר המעקב נכשלה, נסו שוב.');
+    } finally {
+      setSavingTrackingNumber106(false);
+    }
+  }
+
   async function handleAddLog(e) {
     e.preventDefault();
     setSavingLog(true);
@@ -249,6 +275,27 @@ export default function MokadReportDetail({ reportId, onClose, onChanged }) {
                   <strong>מזהה:</strong> {data.report.reportNumber}
                 </div>
               )}
+              <div className="mokad-detail__tracking-106-row">
+                <strong>מספר מעקב 106:</strong>
+                <input
+                  type="text"
+                  className="mokad-detail__input mokad-detail__input--inline"
+                  placeholder="למשל 12345678"
+                  value={trackingNumber106Input}
+                  onChange={(e) => setTrackingNumber106Input(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="mokad-detail__btn"
+                  onClick={handleSaveTrackingNumber106}
+                  disabled={
+                    savingTrackingNumber106 ||
+                    trackingNumber106Input.trim() === (data.report.trackingNumber106 || '')
+                  }
+                >
+                  {savingTrackingNumber106 ? 'שומר…' : 'שמור'}
+                </button>
+              </div>
               <div>
                 <strong>קטגוריה:</strong> {data.report.category || '—'}
               </div>
