@@ -200,6 +200,27 @@ export function saveRoute(volunteerId, password, { routeId, name, streets, custo
   });
 }
 
+export function fetchScheduledPatrols(volunteerId, password, month) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'list-patrols', volunteerId, password, month }),
+  });
+}
+
+export function savePatrol(volunteerId, password, patrol) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'save-patrol', volunteerId, password, ...patrol }),
+  });
+}
+
+export function deletePatrol(volunteerId, password, patrolId) {
+  return request('/api/coordinator', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'delete-patrol', volunteerId, password, patrolId }),
+  });
+}
+
 export function fetchUsageSummary(volunteerId, password) {
   return request('/api/coordinator', {
     method: 'POST',

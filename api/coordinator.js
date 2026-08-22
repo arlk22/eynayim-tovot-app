@@ -1,4 +1,4 @@
-import { listRecords, updateRecord, createRecord, getRecord } from './_lib/airtable.js';
+import { listRecords, updateRecord, createRecord, getRecord, deleteRecord } from './_lib/airtable.js';
 import { wrapHandler } from './_lib/usage-tracker.js';
 import { verifyCoordinator } from './_lib/coordinator-auth.js';
 import { verifyPatrolLeader, namesMatch } from './_lib/patrol-leader-auth.js';
@@ -6,6 +6,7 @@ import {
   TABLES,
   VOLUNTEER_FIELDS,
   PATROL_FIELDS,
+  PATROL_STATUS,
   REGISTRATION_FIELDS,
   REGISTRATION_STATUS,
   EVENT_FIELDS,
@@ -433,6 +434,111 @@ async function handleSaveOwnRoute(leaderAuth, body, res) {
   }
 }
 
+async function handleListPatrols(body, res) {
+  const { month } = body;
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+    res.status(400).json({ error: 'invalid_month' });
+    return;
+  }
+
+  try {
+    const [patrols, routes] = await Promise.all([
+      listRecords(TABLES.PATROLS, {
+        filterByFormula: `DATETIME_FORMAT({${PATROL_FIELDS.DATE}}, 'YYYY-MM')='${month}'`,
+        sort: [{ field: PATROL_FIELDS.DATE, direction: 'asc' }],
+        cacheTtlMs: 0,
+      }),
+      listRecords(TABLES.PATROL_ROUTES, { fields: [ROUTE_FIELDS.NAME] }),
+    ]);
+
+    const routeNameById = new Map(routes.map((r) => [r.id, r.fields[ROUTE_FIELDS.NAME] || '']));
+
+    const result = patrols.map((p) => {
+      const f = p.fields;
+      const routeId = f[PATROL_FIELDS.ROUTE]?.[0] || null;
+      return {
+        id: p.id,
+        date: f[PATROL_FIELDS.DATE] || null,
+        dayOfWeek: f[PATROL_FIELDS.DAY_OF_WEEK] || null,
+        startTime: f[PATROL_FIELDS.START_TIME] || '',
+        endTime: f[PATROL_FIELDS.END_TIME] || '',
+        leader: f[PATROL_FIELDS.LEADER] || '',
+        maxParticipants: f[PATROL_FIELDS.MAX_PARTICIPANTS] ?? null,
+        registeredCount: f[PATROL_FIELDS.REGISTERED_COUNT] || 0,
+        status: f[PATROL_FIELDS.STATUS] || '',
+        notes: f[PATROL_FIELDS.NOTES] || '',
+        routeId,
+        routeName: routeId ? routeNameById.get(routeId) || '' : '',
+      };
+    });
+
+    res.status(200).json({ patrols: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load patrols' });
+  }
+}
+
+async function handleSavePatrol(body, res) {
+  const { patrolId, date, startTime, endTime, leader, maxParticipants, status, notes, routeId } = body;
+
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    res.status(400).json({ error: 'invalid_date' });
+    return;
+  }
+  if (status && !Object.values(PATROL_STATUS).includes(status)) {
+    res.status(400).json({ error: 'invalid_status' });
+    return;
+  }
+
+  try {
+    const fields = {
+      [PATROL_FIELDS.DATE]: date,
+      [PATROL_FIELDS.START_TIME]: startTime || '',
+      [PATROL_FIELDS.END_TIME]: endTime || '',
+      [PATROL_FIELDS.LEADER]: leader || '',
+      [PATROL_FIELDS.MAX_PARTICIPANTS]: maxParticipants ? Number(maxParticipants) : null,
+      [PATROL_FIELDS.STATUS]: status || PATROL_STATUS.OPEN,
+      [PATROL_FIELDS.NOTES]: notes || '',
+      [PATROL_FIELDS.ROUTE]: routeId ? [routeId] : [],
+    };
+
+    let record;
+    if (patrolId) {
+      record = await updateRecord(TABLES.PATROLS, patrolId, fields);
+    } else {
+      record = await createRecord(TABLES.PATROLS, fields);
+    }
+
+    res.status(200).json({ ok: true, id: record.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'save_failed' });
+  }
+}
+
+async function handleDeletePatrol(body, res) {
+  const { patrolId } = body;
+  if (!patrolId) {
+    res.status(400).json({ error: 'missing_patrol' });
+    return;
+  }
+
+  try {
+    const patrol = await getRecord(TABLES.PATROLS, patrolId, { cacheTtlMs: 0 });
+    const registeredCount = patrol.fields[PATROL_FIELDS.REGISTERED_COUNT] || 0;
+    if (registeredCount > 0) {
+      res.status(400).json({ error: 'has_registrations' });
+      return;
+    }
+    await deleteRecord(TABLES.PATROLS, patrolId);
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'delete_failed' });
+  }
+}
+
 async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -501,6 +607,15 @@ async function handler(req, res) {
       return;
     case 'usage-summary':
       await handleUsageSummary(body, res);
+      return;
+    case 'list-patrols':
+      await handleListPatrols(body, res);
+      return;
+    case 'save-patrol':
+      await handleSavePatrol(body, res);
+      return;
+    case 'delete-patrol':
+      await handleDeletePatrol(body, res);
       return;
     default:
       res.status(400).json({ error: 'unknown_action' });

@@ -146,6 +146,12 @@ export async function updateRecord(table, recordId, fields) {
   return data;
 }
 
+export async function deleteRecord(table, recordId) {
+  const data = await request(table, { method: 'DELETE', path: `/${recordId}` });
+  invalidateTable(table);
+  return data;
+}
+
 export async function getRecord(table, recordId, { cacheTtlMs = DEFAULT_TTL_MS } = {}) {
   const cacheKey = `${table}::get::${recordId}`;
   if (cacheTtlMs > 0) {
