@@ -50,6 +50,7 @@ async function handler(req, res) {
     res.status(200).json({
       id: match.id,
       name: match.fields[VOLUNTEER_FIELDS.NAME] || '',
+      phone: match.fields[VOLUNTEER_FIELDS.PHONE] || '',
       isCoordinator: COORDINATOR_ROLES.includes(match.fields[VOLUNTEER_FIELDS.ROLE]),
       isMokad: MOKAD_ROLES.includes(match.fields[VOLUNTEER_FIELDS.ROLE]),
     });

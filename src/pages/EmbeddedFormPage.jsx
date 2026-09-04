@@ -4,15 +4,16 @@ import './EmbeddedFormPage.css';
 export default function EmbeddedFormPage({ title, src }) {
   const { volunteer } = useAuth();
 
-  // Prefills the reporter into the Fillout form (hidden field there, set up
-  // via Fillout's URL parameters) so a logged-in volunteer never has to
-  // pick themselves again. "שם מדווח" is a linked-record field, so its
-  // Default value must be the volunteer's Airtable record ID, not their
-  // name text. Harmless if the form has no such registered parameter —
-  // Fillout just ignores unknown query params.
+  // Prefills the reporter's phone into a hidden text field on the Fillout
+  // form, so a logged-in volunteer never has to identify themselves again.
+  // Deliberately a plain phone value (not the volunteer's record ID) —
+  // Fillout's linked-record "שם מדווח" field doesn't sync reliably when
+  // prefilled this way, so the actual volunteer link is resolved
+  // server-side from this phone number instead (see api/mokad.js).
+  // Harmless if the form has no such registered parameter.
   const url = new URL(src);
-  if (volunteer?.id) {
-    url.searchParams.set('reporter_name', volunteer.id);
+  if (volunteer?.phone) {
+    url.searchParams.set('reporter_phone', volunteer.phone);
   }
 
   return (

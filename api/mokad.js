@@ -27,6 +27,10 @@ function daysSince(dateStr) {
   return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
 }
 
+function normalizePhone(phone) {
+  return String(phone || '').replace(/\D/g, '');
+}
+
 async function handleReports(body, res) {
   try {
     const [reports, categories, volunteers, municipalityContacts] = await Promise.all([
@@ -34,7 +38,7 @@ async function handleReports(body, res) {
         sort: [{ field: HADAR_REPORT_FIELDS.REPORTED_AT, direction: 'desc' }],
       }),
       listRecords(TABLES.REPORT_CATEGORIES, { fields: [REPORT_CATEGORY_FIELDS.NAME] }),
-      listRecords(TABLES.VOLUNTEERS, { fields: [VOLUNTEER_FIELDS.NAME] }),
+      listRecords(TABLES.VOLUNTEERS, { fields: [VOLUNTEER_FIELDS.NAME, VOLUNTEER_FIELDS.PHONE] }),
       listRecords(TABLES.ACTIVITY_LOG, {
         filterByFormula: `{${ACTIVITY_LOG_FIELDS.ACTION_TYPE}}='${ACTIVITY_LOG_ACTION_TYPE.MUNICIPALITY_CONTACT}'`,
         fields: [ACTIVITY_LOG_FIELDS.RELATED_REPORT],
@@ -81,6 +85,30 @@ async function handleReports(body, res) {
       await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, { [HADAR_REPORT_FIELDS.ID]: nextId });
       r.fields[HADAR_REPORT_FIELDS.ID] = nextId;
       nextId++;
+    }
+
+    // Volunteer-submitted reports carry the reporter's phone (prefilled by
+    // the app into a plain hidden text field) rather than a direct link —
+    // Fillout's linked-record field doesn't sync reliably when prefilled via
+    // URL. Resolve the real שם מדווח link here instead, lazily, the same way
+    // as the מזהה backfill above.
+    const volunteerIdByPhone = new Map(
+      volunteers
+        .map((v) => [normalizePhone(v.fields[VOLUNTEER_FIELDS.PHONE]), v.id])
+        .filter(([phone]) => phone)
+    );
+    const needsReporterLink = reports.filter(
+      (r) =>
+        (r.fields[HADAR_REPORT_FIELDS.REPORTER] || []).length === 0 &&
+        normalizePhone(r.fields[HADAR_REPORT_FIELDS.PHONE]) &&
+        volunteerIdByPhone.has(normalizePhone(r.fields[HADAR_REPORT_FIELDS.PHONE]))
+    );
+    for (const r of needsReporterLink) {
+      const volunteerId = volunteerIdByPhone.get(normalizePhone(r.fields[HADAR_REPORT_FIELDS.PHONE]));
+      await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, {
+        [HADAR_REPORT_FIELDS.REPORTER]: [volunteerId],
+      });
+      r.fields[HADAR_REPORT_FIELDS.REPORTER] = [volunteerId];
     }
 
     const result = reports.map((r) => {
