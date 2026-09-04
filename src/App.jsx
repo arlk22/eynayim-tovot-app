@@ -18,8 +18,8 @@ import RoutesBuilderPage from './pages/RoutesBuilderPage';
 import MyRoutePage from './pages/MyRoutePage';
 import './App.css';
 
-const EVENT_REPORT_URL = 'https://gdform1.fillout.com/t/fzNH38HwdYus';
-const HAZARD_REPORT_URL = 'https://gdform1.fillout.com/gdform1';
+const EVENT_REPORT_FILLOUT_ID = 'fzNH38HwdYus';
+const HAZARD_REPORT_FILLOUT_ID = 'ufY8ENvVuwus';
 
 function TopBar() {
   const location = useLocation();
@@ -61,7 +61,7 @@ export default function App() {
             path="/report-event"
             element={
               <ProtectedRoute>
-                <EmbeddedFormPage title="דיווח אירוע" src={EVENT_REPORT_URL} />
+                <EmbeddedFormPage title="דיווח אירוע" filloutId={EVENT_REPORT_FILLOUT_ID} />
               </ProtectedRoute>
             }
           />
@@ -69,7 +69,7 @@ export default function App() {
             path="/report-hazard"
             element={
               <ProtectedRoute>
-                <EmbeddedFormPage title="דיווח מפגע" src={HAZARD_REPORT_URL} />
+                <EmbeddedFormPage title="דיווח מפגע" filloutId={HAZARD_REPORT_FILLOUT_ID} />
               </ProtectedRoute>
             }
           />

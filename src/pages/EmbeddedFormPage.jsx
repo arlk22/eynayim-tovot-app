@@ -1,13 +1,19 @@
+import { useState } from 'react';
+import { FilloutStandardEmbed } from '@fillout/react';
 import { useAuth } from '../context/AuthContext';
+import { resolveReports } from '../lib/api';
 import './EmbeddedFormPage.css';
 
-export default function EmbeddedFormPage({ title, src }) {
+const DOMAIN = 'gdform1.fillout.com';
+
+export default function EmbeddedFormPage({ title, filloutId }) {
   const { volunteer, profileRefreshed } = useAuth();
+  const [submitted, setSubmitted] = useState(false);
 
   // Wait for the background profile refresh (see AuthContext) before
-  // building the iframe URL — without this, jumping straight to this page
-  // right after opening the app can render before `volunteer.phone` is
-  // populated, silently sending the form with no reporter identification.
+  // rendering the embed — without this, jumping straight to this page right
+  // after opening the app can render before `volunteer.phone` is populated,
+  // silently sending the form with no reporter identification.
   if (!profileRefreshed) {
     return (
       <div className="embedded-form-page">
@@ -17,27 +23,32 @@ export default function EmbeddedFormPage({ title, src }) {
     );
   }
 
-  // Prefills the reporter's phone into a hidden text field on the Fillout
-  // form, so a logged-in volunteer never has to identify themselves again.
-  // Deliberately a plain phone value (not the volunteer's record ID) —
-  // Fillout's linked-record "שם מדווח" field doesn't sync reliably when
-  // prefilled this way, so the actual volunteer link is resolved
-  // server-side from this phone number instead (see api/mokad.js).
-  // Harmless if the form has no such registered parameter.
-  const url = new URL(src);
-  if (volunteer?.phone) {
-    url.searchParams.set('reporter_phone', volunteer.phone);
+  async function handleSubmit() {
+    if (submitted) return;
+    setSubmitted(true);
+    // Resolves מזהה + שם מדווח for this (and any other pending) report right
+    // now, instead of waiting for a מוקדן to next open the dashboard — see
+    // handleResolveReports in api/mokad.js. Best-effort: the lazy backfill
+    // on the next מוקד dashboard load still catches it if this fails.
+    try {
+      await resolveReports();
+    } catch {
+      // ignore — not worth surfacing to the volunteer, who already submitted
+    }
   }
 
   return (
     <div className="embedded-form-page">
       <h1 className="embedded-form-page__title">{title}</h1>
-      <iframe
-        className="embedded-form-page__iframe"
-        src={url.toString()}
-        title={title}
-        loading="lazy"
-      />
+      <div className="embedded-form-page__iframe">
+        <FilloutStandardEmbed
+          filloutId={filloutId}
+          domain={DOMAIN}
+          dynamicResize
+          parameters={volunteer?.phone ? { reporter_phone: volunteer.phone } : undefined}
+          onSubmit={handleSubmit}
+        />
+      </div>
     </div>
   );
 }

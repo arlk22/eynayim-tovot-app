@@ -114,6 +114,13 @@ export function setMokadReadyForExternalReport(volunteerId, password, reportId, 
   });
 }
 
+export function resolveReports() {
+  return request('/api/mokad', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'resolve-reports' }),
+  });
+}
+
 export function fetchMunicipalityFollowups(volunteerId, password) {
   return request('/api/mokad', {
     method: 'POST',

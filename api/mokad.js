@@ -31,6 +31,84 @@ function normalizePhone(phone) {
   return String(phone || '').replace(/\D/g, '');
 }
 
+// Fillout writes new reports straight into Airtable with no מזהה, no
+// guaranteed תאריך דיווח, and no real שם מדווח link (see reporterPhoneOf
+// below) — this backfills all three for whatever reports still need it.
+// Called both when a מוקדן opens the dashboard (handleReports) and right
+// after a volunteer submits their own report (handleResolveReports), so
+// resolution doesn't depend on someone else happening to open the app.
+async function backfillReports(reports, volunteers) {
+  for (const r of reports) {
+    if (!r.fields[HADAR_REPORT_FIELDS.REPORTED_AT]) {
+      await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, {
+        [HADAR_REPORT_FIELDS.REPORTED_AT]: r.createdTime,
+      });
+      r.fields[HADAR_REPORT_FIELDS.REPORTED_AT] = r.createdTime;
+    }
+  }
+
+  // Sorted by Airtable's own createdTime (always present) rather than
+  // תאריך דיווח, since that field itself can be blank on reports affected by
+  // the Fillout mapping issue — every report still gets a tracking number
+  // regardless.
+  const existingIds = reports
+    .map((r) => r.fields[HADAR_REPORT_FIELDS.ID])
+    .filter((n) => typeof n === 'number');
+  let nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+  const needsId = reports
+    .filter((r) => r.fields[HADAR_REPORT_FIELDS.ID] == null)
+    .sort((a, b) => new Date(a.createdTime) - new Date(b.createdTime));
+  for (const r of needsId) {
+    await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, { [HADAR_REPORT_FIELDS.ID]: nextId });
+    r.fields[HADAR_REPORT_FIELDS.ID] = nextId;
+    nextId++;
+  }
+
+  // Volunteer-submitted reports carry the reporter's phone (prefilled by
+  // the app into a plain hidden text field — טלפון מדווח (אוטומטי), not the
+  // real מספר טלפון column, since Airtable's phoneNumber field type seems
+  // to silently break Fillout's sync when prefilled via URL) rather than a
+  // direct link. Resolve the real שם מדווח link here instead.
+  const volunteerIdByPhone = new Map(
+    volunteers
+      .map((v) => [normalizePhone(v.fields[VOLUNTEER_FIELDS.PHONE]), v.id])
+      .filter(([phone]) => phone)
+  );
+  function reporterPhoneOf(r) {
+    return normalizePhone(r.fields[HADAR_REPORT_FIELDS.REPORTER_PHONE_AUTO]) || normalizePhone(r.fields[HADAR_REPORT_FIELDS.PHONE]);
+  }
+  const needsReporterLink = reports.filter(
+    (r) => (r.fields[HADAR_REPORT_FIELDS.REPORTER] || []).length === 0 && volunteerIdByPhone.has(reporterPhoneOf(r))
+  );
+  for (const r of needsReporterLink) {
+    const volunteerId = volunteerIdByPhone.get(reporterPhoneOf(r));
+    await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, {
+      [HADAR_REPORT_FIELDS.REPORTER]: [volunteerId],
+    });
+    r.fields[HADAR_REPORT_FIELDS.REPORTER] = [volunteerId];
+  }
+}
+
+// Self-serve, no מוקד password required — a volunteer triggering this right
+// after their own submission can only cause the same backfill a מוקדן's
+// next dashboard load would've done anyway (מזהה numbering, and resolving
+// שם מדווח links from already-stored phone numbers). No report content is
+// returned, so there's nothing here for a caller to learn about anyone
+// else's reports.
+async function handleResolveReports(body, res) {
+  try {
+    const [reports, volunteers] = await Promise.all([
+      listRecords(TABLES.HADAR_NEW_REPORT, { cacheTtlMs: 0 }),
+      listRecords(TABLES.VOLUNTEERS, { fields: [VOLUNTEER_FIELDS.PHONE] }),
+    ]);
+    await backfillReports(reports, volunteers);
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'resolve_failed' });
+  }
+}
+
 async function handleReports(body, res) {
   try {
     const [reports, categories, volunteers, municipalityContacts] = await Promise.all([
@@ -55,62 +133,7 @@ async function handleReports(body, res) {
       municipalityContacts.flatMap((e) => e.fields[ACTIVITY_LOG_FIELDS.RELATED_REPORT] || [])
     );
 
-    // Safety net for the Fillout dynamic-default-value issue: if תאריך דיווח
-    // is blank, use Airtable's own record-creation timestamp instead —
-    // always accurate, nothing to misconfigure on the Fillout side.
-    for (const r of reports) {
-      if (!r.fields[HADAR_REPORT_FIELDS.REPORTED_AT]) {
-        await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, {
-          [HADAR_REPORT_FIELDS.REPORTED_AT]: r.createdTime,
-        });
-        r.fields[HADAR_REPORT_FIELDS.REPORTED_AT] = r.createdTime;
-      }
-    }
-
-    // Fillout writes new reports straight into Airtable, so nothing ever
-    // assigns מזהה on creation. Backfill it lazily here (this endpoint is
-    // hit every time a מוקדן opens the dashboard) instead of relying on a
-    // human to number reports by hand. Sorted by Airtable's own createdTime
-    // (always present) rather than תאריך דיווח, since that field itself can
-    // be blank on reports affected by the Fillout mapping issue — every
-    // report still gets a tracking number regardless.
-    const existingIds = reports
-      .map((r) => r.fields[HADAR_REPORT_FIELDS.ID])
-      .filter((n) => typeof n === 'number');
-    let nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
-    const needsId = reports
-      .filter((r) => r.fields[HADAR_REPORT_FIELDS.ID] == null)
-      .sort((a, b) => new Date(a.createdTime) - new Date(b.createdTime));
-    for (const r of needsId) {
-      await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, { [HADAR_REPORT_FIELDS.ID]: nextId });
-      r.fields[HADAR_REPORT_FIELDS.ID] = nextId;
-      nextId++;
-    }
-
-    // Volunteer-submitted reports carry the reporter's phone (prefilled by
-    // the app into a plain hidden text field — טלפון מדווח (אוטומטי), not the
-    // real מספר טלפון column, since Airtable's phoneNumber field type seems
-    // to silently break Fillout's sync when prefilled via URL) rather than a
-    // direct link. Resolve the real שם מדווח link here instead, lazily, the
-    // same way as the מזהה backfill above.
-    const volunteerIdByPhone = new Map(
-      volunteers
-        .map((v) => [normalizePhone(v.fields[VOLUNTEER_FIELDS.PHONE]), v.id])
-        .filter(([phone]) => phone)
-    );
-    function reporterPhoneOf(r) {
-      return normalizePhone(r.fields[HADAR_REPORT_FIELDS.REPORTER_PHONE_AUTO]) || normalizePhone(r.fields[HADAR_REPORT_FIELDS.PHONE]);
-    }
-    const needsReporterLink = reports.filter(
-      (r) => (r.fields[HADAR_REPORT_FIELDS.REPORTER] || []).length === 0 && volunteerIdByPhone.has(reporterPhoneOf(r))
-    );
-    for (const r of needsReporterLink) {
-      const volunteerId = volunteerIdByPhone.get(reporterPhoneOf(r));
-      await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, {
-        [HADAR_REPORT_FIELDS.REPORTER]: [volunteerId],
-      });
-      r.fields[HADAR_REPORT_FIELDS.REPORTER] = [volunteerId];
-    }
+    await backfillReports(reports, volunteers);
 
     const result = reports.map((r) => {
       const f = r.fields;
@@ -515,6 +538,14 @@ async function handler(req, res) {
 
   const body = req.body || {};
   const { action, volunteerId, password } = body;
+
+  // Any logged-in volunteer, no מוקד password — see handleResolveReports for
+  // why this is safe to leave open.
+  if (action === 'resolve-reports') {
+    await handleResolveReports(body, res);
+    return;
+  }
+
   const mokadan = await verifyMokad(volunteerId, password);
   if (!mokadan) {
     res.status(401).json({ error: 'invalid_credentials' });
