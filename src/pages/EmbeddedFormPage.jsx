@@ -2,7 +2,20 @@ import { useAuth } from '../context/AuthContext';
 import './EmbeddedFormPage.css';
 
 export default function EmbeddedFormPage({ title, src }) {
-  const { volunteer } = useAuth();
+  const { volunteer, profileRefreshed } = useAuth();
+
+  // Wait for the background profile refresh (see AuthContext) before
+  // building the iframe URL — without this, jumping straight to this page
+  // right after opening the app can render before `volunteer.phone` is
+  // populated, silently sending the form with no reporter identification.
+  if (!profileRefreshed) {
+    return (
+      <div className="embedded-form-page">
+        <h1 className="embedded-form-page__title">{title}</h1>
+        <p className="embedded-form-page__loading">טוען…</p>
+      </div>
+    );
+  }
 
   // Prefills the reporter's phone into a hidden text field on the Fillout
   // form, so a logged-in volunteer never has to identify themselves again.

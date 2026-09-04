@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
   const [coordinatorSession, setCoordinatorSession] = useState(null);
   const [mokadSession, setMokadSession] = useState(null);
   const [ready, setReady] = useState(false);
+  const [profileRefreshed, setProfileRefreshed] = useState(false);
 
   useEffect(() => {
     try {
@@ -30,15 +31,23 @@ export function AuthProvider({ children }) {
   // Picks up profile fields added after this device's original login (e.g.
   // phone) without requiring a coordinator to reset the device and the
   // volunteer to log in again — silent, and never blocks the cached session
-  // if it fails (offline, etc).
+  // if it fails (offline, etc). `profileRefreshed` lets a page that depends
+  // on a fresh field (e.g. the report form needing `phone`) wait for this to
+  // settle instead of racing it — without it, opening the app and jumping
+  // straight to that page could render before the refresh resolves.
   useEffect(() => {
-    if (!volunteer?.id) return;
+    if (!volunteer?.id) {
+      setProfileRefreshed(true);
+      return;
+    }
+    setProfileRefreshed(false);
     refreshVolunteer(volunteer.id)
       .then((data) => {
         setVolunteer(data);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setProfileRefreshed(true));
   }, [volunteer?.id]);
 
   const login = useCallback(async (phone) => {
@@ -87,6 +96,7 @@ export function AuthProvider({ children }) {
       value={{
         volunteer,
         ready,
+        profileRefreshed,
         login,
         coordinatorSession,
         unlockCoordinator,
