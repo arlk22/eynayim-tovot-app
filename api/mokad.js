@@ -31,9 +31,11 @@ function normalizePhone(phone) {
   return String(phone || '').replace(/\D/g, '');
 }
 
-// Fillout writes new reports straight into Airtable with no מזהה, no
-// guaranteed תאריך דיווח, and no real שם מדווח link (see reporterPhoneOf
-// below) — this backfills all three for whatever reports still need it.
+// Fillout writes new reports straight into Airtable with no guaranteed
+// תאריך דיווח and no real שם מדווח link (see reporterPhoneOf below) — this
+// backfills both for whatever reports still need it. מזהה itself no longer
+// needs backfilling here: it's a native Airtable Autonumber field now
+// (guaranteed unique/atomic on Airtable's side, read-only via the API).
 // Called both when a מוקדן opens the dashboard (handleReports) and right
 // after a volunteer submits their own report (handleResolveReports), so
 // resolution doesn't depend on someone else happening to open the app.
@@ -45,23 +47,6 @@ async function backfillReports(reports, volunteers) {
       });
       r.fields[HADAR_REPORT_FIELDS.REPORTED_AT] = r.createdTime;
     }
-  }
-
-  // Sorted by Airtable's own createdTime (always present) rather than
-  // תאריך דיווח, since that field itself can be blank on reports affected by
-  // the Fillout mapping issue — every report still gets a tracking number
-  // regardless.
-  const existingIds = reports
-    .map((r) => r.fields[HADAR_REPORT_FIELDS.ID])
-    .filter((n) => typeof n === 'number');
-  let nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
-  const needsId = reports
-    .filter((r) => r.fields[HADAR_REPORT_FIELDS.ID] == null)
-    .sort((a, b) => new Date(a.createdTime) - new Date(b.createdTime));
-  for (const r of needsId) {
-    await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, { [HADAR_REPORT_FIELDS.ID]: nextId });
-    r.fields[HADAR_REPORT_FIELDS.ID] = nextId;
-    nextId++;
   }
 
   // Volunteer-submitted reports carry the reporter's phone (prefilled by
@@ -91,10 +76,9 @@ async function backfillReports(reports, volunteers) {
 
 // Self-serve, no מוקד password required — a volunteer triggering this right
 // after their own submission can only cause the same backfill a מוקדן's
-// next dashboard load would've done anyway (מזהה numbering, and resolving
-// שם מדווח links from already-stored phone numbers). No report content is
-// returned, so there's nothing here for a caller to learn about anyone
-// else's reports.
+// next dashboard load would've done anyway (resolving שם מדווח links from
+// already-stored phone numbers). No report content is returned, so there's
+// nothing here for a caller to learn about anyone else's reports.
 async function handleResolveReports(body, res) {
   try {
     const [reports, volunteers] = await Promise.all([

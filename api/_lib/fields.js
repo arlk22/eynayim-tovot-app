@@ -167,7 +167,11 @@ export const REPORT_SUBCATEGORY_FIELDS = {
 };
 
 export const HADAR_REPORT_FIELDS = {
-  ID: 'מזהה',
+  // Native Airtable Autonumber field — guaranteed unique/atomic, no
+  // application-level backfill needed. Replaced the old manually-numbered
+  // 'מזהה' field (now renamed 'מזהה ישן (לא בשימוש)' in Airtable, kept only
+  // for historical reference — its values no longer match anything live).
+  ID: 'מזהה (אוטומטי)',
   REPORT_TYPE: 'סוג דיווח',
   CATEGORY: 'קטגוריה',
   SUBCATEGORY: 'תת קטגוריה',
