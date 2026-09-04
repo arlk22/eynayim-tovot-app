@@ -88,23 +88,24 @@ async function handleReports(body, res) {
     }
 
     // Volunteer-submitted reports carry the reporter's phone (prefilled by
-    // the app into a plain hidden text field) rather than a direct link —
-    // Fillout's linked-record field doesn't sync reliably when prefilled via
-    // URL. Resolve the real שם מדווח link here instead, lazily, the same way
-    // as the מזהה backfill above.
+    // the app into a plain hidden text field — טלפון מדווח (אוטומטי), not the
+    // real מספר טלפון column, since Airtable's phoneNumber field type seems
+    // to silently break Fillout's sync when prefilled via URL) rather than a
+    // direct link. Resolve the real שם מדווח link here instead, lazily, the
+    // same way as the מזהה backfill above.
     const volunteerIdByPhone = new Map(
       volunteers
         .map((v) => [normalizePhone(v.fields[VOLUNTEER_FIELDS.PHONE]), v.id])
         .filter(([phone]) => phone)
     );
+    function reporterPhoneOf(r) {
+      return normalizePhone(r.fields[HADAR_REPORT_FIELDS.REPORTER_PHONE_AUTO]) || normalizePhone(r.fields[HADAR_REPORT_FIELDS.PHONE]);
+    }
     const needsReporterLink = reports.filter(
-      (r) =>
-        (r.fields[HADAR_REPORT_FIELDS.REPORTER] || []).length === 0 &&
-        normalizePhone(r.fields[HADAR_REPORT_FIELDS.PHONE]) &&
-        volunteerIdByPhone.has(normalizePhone(r.fields[HADAR_REPORT_FIELDS.PHONE]))
+      (r) => (r.fields[HADAR_REPORT_FIELDS.REPORTER] || []).length === 0 && volunteerIdByPhone.has(reporterPhoneOf(r))
     );
     for (const r of needsReporterLink) {
-      const volunteerId = volunteerIdByPhone.get(normalizePhone(r.fields[HADAR_REPORT_FIELDS.PHONE]));
+      const volunteerId = volunteerIdByPhone.get(reporterPhoneOf(r));
       await updateRecord(TABLES.HADAR_NEW_REPORT, r.id, {
         [HADAR_REPORT_FIELDS.REPORTER]: [volunteerId],
       });
