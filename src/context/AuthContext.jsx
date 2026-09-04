@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { login as loginRequest, coordinatorAuth, mokadAuth } from '../lib/api';
+import { login as loginRequest, refreshVolunteer, coordinatorAuth, mokadAuth } from '../lib/api';
 
 const STORAGE_KEY = 'eynayim-tovot.volunteer';
 const COORDINATOR_KEY = 'eynayim-tovot.coordinator';
@@ -26,6 +26,20 @@ export function AuthProvider({ children }) {
     }
     setReady(true);
   }, []);
+
+  // Picks up profile fields added after this device's original login (e.g.
+  // phone) without requiring a coordinator to reset the device and the
+  // volunteer to log in again — silent, and never blocks the cached session
+  // if it fails (offline, etc).
+  useEffect(() => {
+    if (!volunteer?.id) return;
+    refreshVolunteer(volunteer.id)
+      .then((data) => {
+        setVolunteer(data);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      })
+      .catch(() => {});
+  }, [volunteer?.id]);
 
   const login = useCallback(async (phone) => {
     const data = await loginRequest(phone);

@@ -22,6 +22,10 @@ export function login(phone) {
   return request('/api/login', { method: 'POST', body: JSON.stringify({ phone }) });
 }
 
+export function refreshVolunteer(id) {
+  return request('/api/login', { method: 'POST', body: JSON.stringify({ id }) });
+}
+
 export function fetchPatrols(month) {
   return request(`/api/patrols?month=${encodeURIComponent(month)}`);
 }
